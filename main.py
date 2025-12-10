@@ -1,113 +1,201 @@
-from fastapi import FastAPI, HTTPException, Depends
-from fastapi.responses import JSONResponse
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel, Field
+from typing import Optional
 import os
 from dotenv import load_dotenv
-from tool_core import generate_output
 
-# Load .env
+from core.gumroad import GumroadValidator
+from core.usage import UsageTracker
+from core.generator import EmailGenerator
+
+# Load environment variables
 load_dotenv()
 
-# Verify API key is loaded
+# Verify required env vars
 ANTHROPIC_KEY = os.getenv("ANTHROPIC_API_KEY")
-if ANTHROPIC_KEY:
-    print(f"✓ ANTHROPIC_API_KEY loaded: {ANTHROPIC_KEY[:15]}...")
-else:
-    print("✗ WARNING: ANTHROPIC_API_KEY not found in environment!")
-
-# Load Gumroad-style license keys (replace with DB later if needed)
-VALID_KEYS = {
-    "GUM-2025-XYZ789": "pro@gmail.com",
-    "GUM-TEST-111": "testuser@example.com",
-    # Add more as needed
-}
+if not ANTHROPIC_KEY:
+    raise ValueError("ANTHROPIC_API_KEY not found in environment")
 
 app = FastAPI(
-    title="ViralPost AI Pro",
-    description="Lifetime LinkedIn post generator — $69 one-time",
-    version="2.0"
+    title="Cold Email Generator API",
+    description="Professional cold email generation with strategic intelligence",
+    version="1.0.0"
 )
 
-# CORS Settings
+# CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],         # Frontend allowed
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-security = HTTPBearer()
+# Initialize services
+gumroad = GumroadValidator()
+usage_tracker = UsageTracker()
 
-# -------------------------------
-# AUTHENTICATION: License Key
-# -------------------------------
-def verify_license(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    """Validate Gumroad-style license keys."""
-    key = credentials.credentials
-    print(f"Verifying license key: {key}")
-    if key not in VALID_KEYS:
-        raise HTTPException(status_code=401, detail="Invalid or expired license key")
-    return key
 
-# -------------------------------
-# REQUEST MODEL
-# -------------------------------
-class ToolRequest(BaseModel):
-    prompt: str
-    style: str = "professional"
-    ai_key: str | None = None        # Optional user-supplied key
-    model: str = "claude-sonnet-4-20250514"  # FIXED: Valid model
+# Request models
+class GenerateRequest(BaseModel):
+    company_name: str = Field(..., min_length=1, max_length=200)
+    industry: str = Field(..., min_length=1, max_length=100)
+    offer: str = Field(..., min_length=10, max_length=500)
+    style: str = Field(default="professional", pattern="^(professional|casual|bold)$")
+    company_size: str = Field(default="unknown")
+    user_api_key: Optional[str] = None
 
-# -------------------------------
-# ROUTES
-# -------------------------------
+
+# Routes
 @app.get("/")
 async def root():
+    """Health check and API info"""
     return {
-        "message": "ViralPost AI Pro is LIVE — $69 lifetime access",
-        "version": "2.0",
-        "claude_key_configured": bool(ANTHROPIC_KEY)
+        "status": "online",
+        "service": "Cold Email Generator API",
+        "version": "1.0.0"
     }
 
+
+@app.get("/api/usage")
+async def get_usage(authorization: str = Header(...)):
+    """Get usage statistics for a license key"""
+    
+    # Extract license key from Authorization header
+    license_key = authorization.replace("Bearer ", "").strip()
+    
+    if not license_key:
+        raise HTTPException(status_code=401, detail="License key required")
+    
+    # Validate license with Gumroad
+    is_valid, error = await gumroad.verify_license(license_key)
+    
+    if not is_valid:
+        raise HTTPException(status_code=401, detail=error)
+    
+    # Get usage stats
+    stats = usage_tracker.get_usage_stats(license_key)
+    
+    return {
+        "success": True,
+        "license_valid": True,
+        "usage": stats
+    }
+
+
 @app.post("/api/generate")
-async def generate_post(request: ToolRequest, license_key=Depends(verify_license)):
-    """
-    Main viral post generator API endpoint.
-    """
-    print(f"Generate request received: prompt='{request.prompt[:50]}...', style={request.style}")
+async def generate_campaign(
+    request: GenerateRequest,
+    authorization: str = Header(...)
+):
+    """Generate complete cold email campaign"""
+    
+    # Extract license key
+    license_key = authorization.replace("Bearer ", "").strip()
+    
+    if not license_key:
+        raise HTTPException(
+            status_code=401,
+            detail="License key required. Purchase at [YOUR_GUMROAD_URL]"
+        )
+    
+    # Validate license with Gumroad
+    is_valid, error = await gumroad.verify_license(license_key)
+    
+    if not is_valid:
+        raise HTTPException(status_code=401, detail=error)
+    
+    # Check usage limits
+    can_use, current_uses, needs_own_key = usage_tracker.check_usage(license_key)
+    
+    if not can_use and not request.user_api_key:
+        raise HTTPException(
+            status_code=403,
+            detail=f"Free usage limit reached ({current_uses} uses). Please provide your Claude API key to continue."
+        )
+    
+    # Determine which API key to use
+    api_key_to_use = request.user_api_key if needs_own_key else None
     
     try:
-        result = generate_output(
-            prompt=request.prompt,
+        # Generate campaign
+        generator = EmailGenerator(api_key=api_key_to_use)
+        
+        result = await generator.generate_campaign(
+            company_name=request.company_name,
+            industry=request.industry,
+            offer=request.offer,
             style=request.style,
-            user_ai_key=request.ai_key,
-            preferred_model=request.model
+            company_size=request.company_size
         )
         
-        # Check if result indicates an error
-        if result.startswith("Error:") or result.startswith("Claude error") or result.startswith("Request failed:"):
-            raise HTTPException(status_code=500, detail=result)
+        # Increment usage (only if using our key)
+        if not request.user_api_key:
+            usage_tracker.increment_usage(license_key)
+        
+        # Get updated stats
+        updated_stats = usage_tracker.get_usage_stats(license_key)
         
         return {
             "success": True,
             "result": result,
-            "license_valid": True,
-            "model": request.model
+            "usage": updated_stats
         }
         
-    except HTTPException:
-        raise
+    except ValueError as e:
+        # Invalid API key or config error
+        raise HTTPException(status_code=400, detail=str(e))
+    
     except Exception as e:
-        print(f"Error in generate_post: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Generation failed: {str(e)}")
+        # Generation error
+        error_msg = str(e)
+        
+        # Don't expose internal errors
+        if "API key" in error_msg or "authentication" in error_msg.lower():
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid Claude API key. Check your key and try again."
+            )
+        
+        raise HTTPException(
+            status_code=500,
+            detail=f"Generation failed: {error_msg}"
+        )
+
 
 @app.get("/health")
-async def health():
+async def health_check():
+    """Detailed health check"""
     return {
         "status": "healthy",
-        "uptime": "ok",
-        "claude_key_configured": bool(ANTHROPIC_KEY)
+        "anthropic_configured": bool(ANTHROPIC_KEY),
+        "gumroad_configured": bool(os.getenv("GUMROAD_PRODUCT_PERMALINK")),
+        "database": "connected"
     }
+
+
+# Error handlers
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request, exc):
+    """Custom error response format"""
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "success": False,
+            "error": exc.detail
+        }
+    )
+
+
+@app.exception_handler(Exception)
+async def general_exception_handler(request, exc):
+    """Catch-all error handler"""
+    return JSONResponse(
+        status_code=500,
+        content={
+            "success": False,
+            "error": "Internal server error. Please try again."
+        }
+    )
