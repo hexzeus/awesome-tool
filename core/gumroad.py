@@ -50,7 +50,7 @@ class GumroadValidator:
                 
                 else:
                     # Invalid license
-                    return False, "Invalid license key. Purchase at [YOUR_GUMROAD_URL]"
+                    return False, "Invalid license key. Purchase at https://blazestudiox.gumroad.com/l/coldemailgeneratorpro"
                     
         except httpx.TimeoutException:
             return False, "License verification timeout. Please try again"
