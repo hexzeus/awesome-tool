@@ -242,7 +242,7 @@ VARIANT_2: [alternative subject line]"""
         response = await self.claude.generate(
             system_prompt=METADATA_SYSTEM,
             user_prompt=metadata_prompt,
-            max_tokens=1500,
+            max_tokens=2500,  # Increased from 1500
             temperature=0.7
         )
         
