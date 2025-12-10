@@ -121,13 +121,14 @@ class EmailGenerator:
             data = json.loads(cleaned_response)
             
             # Map keys to match frontend expectations
+            # Handle both old format (pain_points) and new format (top_3_pain_points)
             analysis = {
                 "strategic_brief": {
-                    "top_3_pain_points": data.get("pain_points", []),
-                    "key_objections": data.get("objections", []),
-                    "resonant_value_propositions": data.get("value_props", []),
+                    "top_3_pain_points": data.get("top_3_pain_points", data.get("pain_points", [])),
+                    "key_objections": data.get("key_objections", data.get("objections", [])),
+                    "resonant_value_propositions": data.get("resonant_value_propositions", data.get("value_props", [])),
                     "approach_strategy": data.get("approach_strategy", {}),
-                    "hooks_and_pattern_interrupts": data.get("hooks", [])
+                    "hooks_and_pattern_interrupts": data.get("hooks_and_pattern_interrupts", data.get("hooks", []))
                 },
                 "raw_analysis": cleaned_response
             }
