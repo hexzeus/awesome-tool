@@ -118,21 +118,19 @@ class EmailGenerator:
         
         # Try parsing
         try:
-            analysis = json.loads(cleaned_response)
+            data = json.loads(cleaned_response)
             
-            # Ensure strategic_brief exists with proper structure
-            if "strategic_brief" not in analysis:
-                print("Warning: No strategic_brief in response, creating default structure")
-                analysis = {
-                    "strategic_brief": {
-                        "top_3_pain_points": [],
-                        "key_objections": [],
-                        "resonant_value_propositions": [],
-                        "approach_strategy": {},
-                        "hooks_and_pattern_interrupts": []
-                    },
-                    "raw_analysis": cleaned_response
-                }
+            # Map keys to match frontend expectations
+            analysis = {
+                "strategic_brief": {
+                    "top_3_pain_points": data.get("pain_points", []),
+                    "key_objections": data.get("objections", []),
+                    "resonant_value_propositions": data.get("value_props", []),
+                    "approach_strategy": data.get("approach_strategy", {}),
+                    "hooks_and_pattern_interrupts": data.get("hooks", [])
+                },
+                "raw_analysis": cleaned_response
+            }
             
             return analysis
             
@@ -140,16 +138,10 @@ class EmailGenerator:
             print(f"JSON decode error: {e}")
             print(f"Response preview: {cleaned_response[:200]}")
             
-            # Fallback: Create structured response from text
+            # Fallback: Return raw text for display
             return {
                 "strategic_brief": {
-                    "top_3_pain_points": [
-                        {
-                            "pain_point": "Unable to parse strategic analysis",
-                            "description": "The AI response could not be parsed. Using fallback structure.",
-                            "urgency": "medium"
-                        }
-                    ],
+                    "top_3_pain_points": [],
                     "key_objections": [],
                     "resonant_value_propositions": [],
                     "approach_strategy": {},
