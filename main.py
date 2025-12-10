@@ -98,7 +98,7 @@ async def generate_campaign(
     if not license_key:
         raise HTTPException(
             status_code=401,
-            detail="License key required. Purchase at [YOUR_GUMROAD_URL]"
+            detail="License key required. Purchase at https://blazestudiox.gumroad.com/l/coldemailgeneratorpro"
         )
     
     # Validate license with Gumroad
@@ -171,7 +171,7 @@ async def health_check():
     return {
         "status": "healthy",
         "anthropic_configured": bool(ANTHROPIC_KEY),
-        "gumroad_configured": bool(os.getenv("GUMROAD_PRODUCT_PERMALINK")),
+        "gumroad_configured": bool(os.getenv("GUMROAD_PRODUCT_ID")),
         "database": "connected"
     }
 
