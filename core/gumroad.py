@@ -6,12 +6,12 @@ class GumroadValidator:
     """Validates Gumroad license keys"""
     
     def __init__(self):
-        self.product_permalink = os.getenv("GUMROAD_PRODUCT_PERMALINK")
-        if not self.product_permalink:
-            raise ValueError("GUMROAD_PRODUCT_PERMALINK not configured")
+        self.product_id = os.getenv("GUMROAD_PRODUCT_ID")
+        if not self.product_id:
+            raise ValueError("GUMROAD_PRODUCT_ID not configured")
         
         self.api_url = "https://api.gumroad.com/v2/licenses/verify"
-        print(f"✓ Gumroad initialized with permalink: {self.product_permalink}")
+        print(f"✓ Gumroad initialized with product_id: {self.product_id}")
     
     async def verify_license(self, license_key: str) -> Tuple[bool, Optional[str]]:
         """
@@ -31,7 +31,7 @@ class GumroadValidator:
                 response = await client.post(
                     self.api_url,
                     data={
-                        "product_permalink": self.product_permalink,
+                        "product_id": self.product_id,
                         "license_key": license_key
                     }
                 )
@@ -58,7 +58,7 @@ class GumroadValidator:
                 else:
                     # Invalid license
                     print(f"✗ License invalid: {data.get('message', 'Unknown error')}")
-                    return False, f"Invalid license key. {data.get('message', '')} Purchase at https://blazestudiox.gumroad.com/l/coldemailgeneratorpro"
+                    return False, f"Invalid license key. Purchase at https://blazestudiox.gumroad.com/l/coldemailgeneratorpro"
                     
         except httpx.TimeoutException:
             print("✗ Gumroad API timeout")
