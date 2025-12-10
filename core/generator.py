@@ -99,12 +99,21 @@ class EmailGenerator:
             temperature=0.7
         )
         
+        # Clean markdown fences if present
+        cleaned_response = response.strip()
+        if cleaned_response.startswith("```"):
+            # Remove ```json or ``` at start and end
+            lines = cleaned_response.split("\n")
+            # Remove first line (```json or ```) and last line (```)
+            if len(lines) > 2:
+                cleaned_response = "\n".join(lines[1:-1])
+        
         # Parse JSON response
         try:
-            analysis = json.loads(response)
+            analysis = json.loads(cleaned_response)
         except json.JSONDecodeError:
             # If Claude doesn't return JSON, structure it
-            analysis = {"raw_analysis": response}
+            analysis = {"analysis_text": response}
         
         return analysis
     
