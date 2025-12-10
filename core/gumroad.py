@@ -11,6 +11,7 @@ class GumroadValidator:
             raise ValueError("GUMROAD_PRODUCT_PERMALINK not configured")
         
         self.api_url = "https://api.gumroad.com/v2/licenses/verify"
+        print(f"✓ Gumroad initialized with permalink: {self.product_permalink}")
     
     async def verify_license(self, license_key: str) -> Tuple[bool, Optional[str]]:
         """
@@ -23,6 +24,8 @@ class GumroadValidator:
         if not license_key or len(license_key) < 10:
             return False, "Invalid license key format"
         
+        print(f"→ Verifying license: {license_key[:20]}...")
+        
         try:
             async with httpx.AsyncClient(timeout=15.0) as client:
                 response = await client.post(
@@ -33,7 +36,10 @@ class GumroadValidator:
                     }
                 )
                 
+                print(f"← Gumroad response status: {response.status_code}")
+                
                 data = response.json()
+                print(f"← Gumroad response data: {data}")
                 
                 if response.status_code == 200 and data.get("success"):
                     # Valid license
@@ -46,14 +52,17 @@ class GumroadValidator:
                     if purchase.get("chargebacked"):
                         return False, "License key has been chargebacked"
                     
+                    print("✓ License valid")
                     return True, None
                 
                 else:
                     # Invalid license
-                    return False, "Invalid license key. Purchase at https://blazestudiox.gumroad.com/l/coldemailgeneratorpro"
+                    print(f"✗ License invalid: {data.get('message', 'Unknown error')}")
+                    return False, f"Invalid license key. {data.get('message', '')} Purchase at https://blazestudiox.gumroad.com/l/coldemailgeneratorpro"
                     
         except httpx.TimeoutException:
+            print("✗ Gumroad API timeout")
             return False, "License verification timeout. Please try again"
         except Exception as e:
-            # On error, fail closed (don't allow access)
+            print(f"✗ Gumroad API error: {str(e)}")
             return False, f"License verification failed: {str(e)}"
