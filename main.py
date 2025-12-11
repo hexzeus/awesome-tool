@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
 from typing import Optional
 import os
@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 from core.gumroad import GumroadValidator
 from core.usage import UsageTracker
 from core.generator import EmailGenerator
+from core.exporter import CampaignExporter
 
 # Load environment variables
 load_dotenv()
@@ -21,7 +22,7 @@ if not ANTHROPIC_KEY:
 app = FastAPI(
     title="Cold Email Generator API",
     description="Professional cold email generation with strategic intelligence",
-    version="1.0.0"
+    version="2.0.0"
 )
 
 # CORS
@@ -36,6 +37,7 @@ app.add_middleware(
 # Initialize services
 gumroad = GumroadValidator()
 usage_tracker = UsageTracker()
+exporter = CampaignExporter()
 
 
 # Request models
@@ -48,6 +50,18 @@ class GenerateRequest(BaseModel):
     user_api_key: Optional[str] = None
 
 
+class DemoRequest(BaseModel):
+    company_name: str = Field(..., min_length=1, max_length=200)
+    industry: str = Field(..., min_length=1, max_length=100)
+    offer: str = Field(..., min_length=10, max_length=500)
+    style: str = Field(default="professional", pattern="^(professional|casual|bold)$")
+
+
+class ExportRequest(BaseModel):
+    campaign_data: dict
+    format: str = Field(..., pattern="^(docx|pdf)$")
+
+
 # Routes
 @app.get("/")
 async def root():
@@ -55,8 +69,77 @@ async def root():
     return {
         "status": "online",
         "service": "Cold Email Generator API",
-        "version": "1.0.0"
+        "version": "2.0.0",
+        "features": ["demo", "export_docx", "export_pdf"]
     }
+
+
+@app.post("/api/demo")
+async def generate_demo(request: DemoRequest):
+    """
+    Generate DEMO campaign (single email, no license required)
+    """
+    
+    try:
+        # Generate limited demo using our API key
+        generator = EmailGenerator(api_key=None)
+        
+        # Generate analysis only
+        print("Demo: Generating analysis...")
+        analysis = await generator._analyze_company(
+            company_name=request.company_name,
+            industry=request.industry,
+            offer=request.offer,
+            company_size="unknown"
+        )
+        
+        # Generate ONE email (problem_aware approach)
+        print("Demo: Generating single email...")
+        demo_email = await generator._generate_email_with_variants(
+            analysis=analysis,
+            approach="problem_aware",
+            style=request.style,
+            company_name=request.company_name,
+            offer=request.offer
+        )
+        
+        # Return demo result with watermark
+        return {
+            "success": True,
+            "demo": True,
+            "message": "🎉 This is a DEMO result. Purchase for 5 complete emails + follow-ups + strategic recommendations.",
+            "result": {
+                "company": {
+                    "name": request.company_name,
+                    "industry": request.industry,
+                    "size": "unknown"
+                },
+                "analysis": {
+                    "strategic_brief": {
+                        "top_3_pain_points": analysis.get('strategic_brief', {}).get('top_3_pain_points', [])[:2],  # Only 2
+                        "note": "⚡ Full analysis with objections, value props, and hooks available in paid version"
+                    }
+                },
+                "demo_email": {
+                    "approach": demo_email["approach"],
+                    "subject": demo_email["subject"],
+                    "email": demo_email["email"],
+                    "note": "⚡ DEMO - Purchase to unlock 4 more email approaches + variants"
+                },
+                "locked_features": {
+                    "additional_emails": "🔒 4 more email approaches (authority, curiosity, social_proof, direct_value)",
+                    "followup_sequence": "🔒 3-email follow-up sequence",
+                    "recommendations": "🔒 Strategic recommendations & optimization tactics",
+                    "exports": "🔒 Export as .docx and .pdf"
+                }
+            }
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Demo generation failed: {str(e)}"
+        )
 
 
 @app.get("/api/usage")
@@ -165,6 +248,59 @@ async def generate_campaign(
         )
 
 
+@app.post("/api/export")
+async def export_campaign(
+    request: ExportRequest,
+    authorization: str = Header(...)
+):
+    """
+    Export campaign to .docx or .pdf
+    """
+    
+    # Extract license key
+    license_key = authorization.replace("Bearer ", "").strip()
+    
+    if not license_key:
+        raise HTTPException(status_code=401, detail="License key required")
+    
+    # Validate license
+    is_valid, error = await gumroad.verify_license(license_key)
+    
+    if not is_valid:
+        raise HTTPException(status_code=401, detail=error)
+    
+    try:
+        campaign_data = request.campaign_data
+        export_format = request.format
+        
+        if export_format == "docx":
+            buffer = exporter.export_to_docx(campaign_data)
+            filename = f"campaign_{campaign_data.get('company', {}).get('name', 'export').replace(' ', '_')}.docx"
+            media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        
+        elif export_format == "pdf":
+            buffer = exporter.export_to_pdf(campaign_data)
+            filename = f"campaign_{campaign_data.get('company', {}).get('name', 'export').replace(' ', '_')}.pdf"
+            media_type = "application/pdf"
+        
+        else:
+            raise HTTPException(status_code=400, detail="Invalid format. Use 'docx' or 'pdf'")
+        
+        return StreamingResponse(
+            buffer,
+            media_type=media_type,
+            headers={
+                "Content-Disposition": f"attachment; filename={filename}"
+            }
+        )
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Export failed: {str(e)}"
+        )
+
+
 @app.get("/health")
 async def health_check():
     """Detailed health check"""
@@ -172,7 +308,8 @@ async def health_check():
         "status": "healthy",
         "anthropic_configured": bool(ANTHROPIC_KEY),
         "gumroad_configured": bool(os.getenv("GUMROAD_PRODUCT_ID")),
-        "database": "connected"
+        "database": "connected",
+        "version": "2.0.0"
     }
 
 
