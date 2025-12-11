@@ -59,17 +59,20 @@ class CampaignExporter:
         # Pain Points
         doc.add_heading('Top 3 Pain Points', level=2)
         for i, pain in enumerate(analysis.get('top_3_pain_points', []), 1):
-            p = doc.add_paragraph(f"{i}. {pain}", style='List Bullet')
+            pain_text = self._to_string(pain)
+            p = doc.add_paragraph(f"{i}. {pain_text}", style='List Bullet')
         
         # Objections
         doc.add_heading('Key Objections', level=2)
         for obj in analysis.get('key_objections', []):
-            doc.add_paragraph(f"• {obj}", style='List Bullet')
+            obj_text = self._to_string(obj)
+            doc.add_paragraph(f"• {obj_text}", style='List Bullet')
         
         # Value Props
         doc.add_heading('Resonant Value Propositions', level=2)
         for vp in analysis.get('resonant_value_propositions', []):
-            doc.add_paragraph(f"• {vp}", style='List Bullet')
+            vp_text = self._to_string(vp)
+            doc.add_paragraph(f"• {vp_text}", style='List Bullet')
         
         doc.add_page_break()
         
@@ -228,7 +231,8 @@ class CampaignExporter:
         # Pain Points
         elements.append(Paragraph("■ Top 3 Pain Points", subsection_style))
         for i, pain in enumerate(analysis.get('top_3_pain_points', []), 1):
-            wrapped = self._wrap_text(pain, 90)
+            pain_text = self._to_string(pain)
+            wrapped = self._wrap_text(pain_text, 90)
             elements.append(Paragraph(f"{i}. {self._escape(wrapped)}", body_style))
             elements.append(Spacer(1, 0.1*inch))
         
@@ -236,7 +240,8 @@ class CampaignExporter:
         elements.append(Spacer(1, 0.2*inch))
         elements.append(Paragraph("■ Key Objections", subsection_style))
         for obj in analysis.get('key_objections', []):
-            wrapped = self._wrap_text(obj, 90)
+            obj_text = self._to_string(obj)
+            wrapped = self._wrap_text(obj_text, 90)
             elements.append(Paragraph(f"• {self._escape(wrapped)}", body_style))
             elements.append(Spacer(1, 0.08*inch))
         
@@ -244,7 +249,8 @@ class CampaignExporter:
         elements.append(Spacer(1, 0.2*inch))
         elements.append(Paragraph("■ Resonant Value Propositions", subsection_style))
         for vp in analysis.get('resonant_value_propositions', []):
-            wrapped = self._wrap_text(vp, 90)
+            vp_text = self._to_string(vp)
+            wrapped = self._wrap_text(vp_text, 90)
             elements.append(Paragraph(f"• {self._escape(wrapped)}", body_style))
             elements.append(Spacer(1, 0.08*inch))
         
@@ -266,7 +272,7 @@ class CampaignExporter:
             elements.append(Spacer(1, 0.1*inch))
             
             # Email body with wrapping
-            email_body = email_data.get('email', '')
+            email_body = self._to_string(email_data.get('email', ''))
             wrapped_body = self._wrap_text(email_body, 85)
             
             # Create table for email body (better formatting)
@@ -294,7 +300,8 @@ class CampaignExporter:
                 elements.append(Spacer(1, 0.1*inch))
                 elements.append(Paragraph("<b>Alternative Subjects:</b>", body_style))
                 for i, variant in enumerate(variants, 1):
-                    wrapped_var = self._wrap_text(variant, 85)
+                    variant_text = self._to_string(variant)
+                    wrapped_var = self._wrap_text(variant_text, 85)
                     elements.append(Paragraph(f"  {i}. {self._escape(wrapped_var)}", body_style))
             
             elements.append(Spacer(1, 0.3*inch))
@@ -312,12 +319,12 @@ class CampaignExporter:
             elements.append(Paragraph(f"Follow-up {i} (Day {day})", subsection_style))
             
             # Subject
-            subject = self._escape(followup.get('subject', ''))
+            subject = self._escape(self._to_string(followup.get('subject', '')))
             elements.append(Paragraph(f"<b>SUBJECT:</b> {subject}", body_style))
             elements.append(Spacer(1, 0.1*inch))
             
             # Body
-            body = followup.get('body', '')
+            body = self._to_string(followup.get('body', ''))
             wrapped_body = self._wrap_text(body, 85)
             
             followup_table = Table(
@@ -346,7 +353,7 @@ class CampaignExporter:
         elements.append(Paragraph("💡 Strategic Recommendations", section_style))
         elements.append(Spacer(1, 0.2*inch))
         
-        recommendations = campaign_data.get('recommendations', {}).get('strategic_recommendations', '')
+        recommendations = self._to_string(campaign_data.get('recommendations', {}).get('strategic_recommendations', ''))
         wrapped_rec = self._wrap_text(recommendations, 95)
         elements.append(Paragraph(self._escape(wrapped_rec), body_style))
         
@@ -370,10 +377,26 @@ class CampaignExporter:
         
         return buffer
     
+    def _to_string(self, value) -> str:
+        """Convert any value to string safely"""
+        if value is None:
+            return ""
+        if isinstance(value, str):
+            return value
+        if isinstance(value, dict):
+            # For dicts, try to extract meaningful content
+            if 'text' in value:
+                return str(value['text'])
+            return str(value)
+        return str(value)
+    
     def _wrap_text(self, text: str, width: int = 90) -> str:
         """Wrap text to prevent overflow"""
         if not text:
             return ""
+        
+        # Ensure it's a string
+        text = self._to_string(text)
         
         lines = text.split('\n')
         wrapped_lines = []
@@ -392,7 +415,9 @@ class CampaignExporter:
         if not text:
             return ""
         
-        text = str(text)
+        # Ensure it's a string
+        text = self._to_string(text)
+        
         text = text.replace('&', '&amp;')
         text = text.replace('<', '&lt;')
         text = text.replace('>', '&gt;')
