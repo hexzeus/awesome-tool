@@ -151,7 +151,7 @@ class CampaignExporter:
         
         return buffer
     
-    def export_to_pdf(self, campaign_data: Dict) -> io.BytesIO:
+def export_to_pdf(self, campaign_data: Dict) -> io.BytesIO:
         """
         Export campaign to professional PDF report
         
@@ -166,48 +166,59 @@ class CampaignExporter:
         # Container for the 'Flowable' objects
         elements = []
         
-        # Define styles
+        # Define styles - CHECK IF EXISTS FIRST
         styles = getSampleStyleSheet()
-        styles.add(ParagraphStyle(
-            name='CustomTitle',
-            parent=styles['Heading1'],
-            fontSize=24,
-            textColor=colors.HexColor('#667eea'),
-            spaceAfter=30,
-            alignment=TA_CENTER
-        ))
-        styles.add(ParagraphStyle(
-            name='SectionHeader',
-            parent=styles['Heading2'],
-            fontSize=16,
-            textColor=colors.HexColor('#764ba2'),
-            spaceAfter=12,
-            spaceBefore=12
-        ))
-        styles.add(ParagraphStyle(
-            name='SubHeader',
-            parent=styles['Heading3'],
-            fontSize=13,
-            textColor=colors.HexColor('#667eea'),
-            spaceAfter=10,
-            spaceBefore=10
-        ))
-        styles.add(ParagraphStyle(
-            name='BodyText',
-            parent=styles['Normal'],
-            fontSize=10,
-            leading=14,
-            alignment=TA_JUSTIFY
-        ))
-        styles.add(ParagraphStyle(
-            name='EmailBody',
-            parent=styles['Normal'],
-            fontSize=9,
-            leading=12,
-            leftIndent=20,
-            rightIndent=20,
-            spaceAfter=6
-        ))
+        
+        # Only add if not exists
+        if 'CustomTitle' not in styles:
+            styles.add(ParagraphStyle(
+                name='CustomTitle',
+                parent=styles['Heading1'],
+                fontSize=24,
+                textColor=colors.HexColor('#667eea'),
+                spaceAfter=30,
+                alignment=TA_CENTER
+            ))
+        
+        if 'SectionHeader' not in styles:
+            styles.add(ParagraphStyle(
+                name='SectionHeader',
+                parent=styles['Heading2'],
+                fontSize=16,
+                textColor=colors.HexColor('#764ba2'),
+                spaceAfter=12,
+                spaceBefore=12
+            ))
+        
+        if 'SubHeader' not in styles:
+            styles.add(ParagraphStyle(
+                name='SubHeader',
+                parent=styles['Heading3'],
+                fontSize=13,
+                textColor=colors.HexColor('#667eea'),
+                spaceAfter=10,
+                spaceBefore=10
+            ))
+        
+        if 'CustomBody' not in styles:
+            styles.add(ParagraphStyle(
+                name='CustomBody',
+                parent=styles['Normal'],
+                fontSize=10,
+                leading=14,
+                alignment=TA_JUSTIFY
+            ))
+        
+        if 'EmailBody' not in styles:
+            styles.add(ParagraphStyle(
+                name='EmailBody',
+                parent=styles['Normal'],
+                fontSize=9,
+                leading=12,
+                leftIndent=20,
+                rightIndent=20,
+                spaceAfter=6
+            ))
         
         # Title
         elements.append(Paragraph("Cold Email Campaign Report", styles['CustomTitle']))
@@ -215,10 +226,10 @@ class CampaignExporter:
         
         # Company info
         company = campaign_data.get('company', {})
-        elements.append(Paragraph(f"<b>Target Company:</b> {company.get('name', 'Unknown')}", styles['BodyText']))
-        elements.append(Paragraph(f"<b>Industry:</b> {company.get('industry', 'N/A')}", styles['BodyText']))
-        elements.append(Paragraph(f"<b>Company Size:</b> {company.get('size', 'N/A')}", styles['BodyText']))
-        elements.append(Paragraph(f"<b>Generated:</b> {datetime.utcnow().strftime('%B %d, %Y at %H:%M UTC')}", styles['BodyText']))
+        elements.append(Paragraph(f"<b>Target Company:</b> {company.get('name', 'Unknown')}", styles['CustomBody']))
+        elements.append(Paragraph(f"<b>Industry:</b> {company.get('industry', 'N/A')}", styles['CustomBody']))
+        elements.append(Paragraph(f"<b>Company Size:</b> {company.get('size', 'N/A')}", styles['CustomBody']))
+        elements.append(Paragraph(f"<b>Generated:</b> {datetime.utcnow().strftime('%B %d, %Y at %H:%M UTC')}", styles['CustomBody']))
         
         elements.append(Spacer(1, 0.4*inch))
         
@@ -233,7 +244,7 @@ class CampaignExporter:
         if pain_points:
             elements.append(Paragraph("🎯 Top 3 Pain Points", styles['SubHeader']))
             for i, pain in enumerate(pain_points, 1):
-                elements.append(Paragraph(f"<b>{i}. {pain.get('pain_point', 'N/A')}</b>", styles['BodyText']))
+                elements.append(Paragraph(f"<b>{i}. {pain.get('pain_point', 'N/A')}</b>", styles['CustomBody']))
                 elements.append(Paragraph(pain.get('description', ''), styles['EmailBody']))
                 if pain.get('urgency'):
                     elements.append(Paragraph(f"<i>Urgency: {pain['urgency']}</i>", styles['EmailBody']))
@@ -246,7 +257,7 @@ class CampaignExporter:
             elements.append(Paragraph("🛡️ Key Objections", styles['SubHeader']))
             for obj in objections[:3]:  # Top 3
                 if obj.get('objection'):
-                    elements.append(Paragraph(f"<b>Objection:</b> {obj['objection']}", styles['BodyText']))
+                    elements.append(Paragraph(f"<b>Objection:</b> {obj['objection']}", styles['CustomBody']))
                     if obj.get('reframe_strategy'):
                         elements.append(Paragraph(f"<b>Strategy:</b> {obj['reframe_strategy']}", styles['EmailBody']))
                     elements.append(Spacer(1, 0.08*inch))
@@ -263,7 +274,7 @@ class CampaignExporter:
             
             # Subject line
             subject = email_data.get('subject', 'N/A')
-            elements.append(Paragraph(f"<b>SUBJECT:</b> {subject}", styles['BodyText']))
+            elements.append(Paragraph(f"<b>SUBJECT:</b> {subject}", styles['CustomBody']))
             
             # Subject variants
             variants = email_data.get('subject_variants', [])
@@ -273,18 +284,19 @@ class CampaignExporter:
             
             elements.append(Spacer(1, 0.1*inch))
             
-            # Email body
+            # Email body - escape for XML
             email_text = email_data.get('email', 'N/A')
+            email_text_safe = email_text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
             
             # Create bordered box for email
-            email_lines = [Paragraph(line, styles['EmailBody']) for line in email_text.split('\n') if line.strip()]
-            
-            email_table = Table([['\n'.join([line.text for line in email_lines])]], colWidths=[6.5*inch])
+            email_table = Table([[email_text_safe]], colWidths=[6.5*inch])
             email_table.setStyle(TableStyle([
                 ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#f8f9fa')),
                 ('BORDER', (0, 0), (-1, -1), 1, colors.HexColor('#667eea')),
                 ('PADDING', (0, 0), (-1, -1), 12),
                 ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+                ('FONTSIZE', (0, 0), (-1, -1), 9),
             ]))
             
             elements.append(email_table)
@@ -307,11 +319,13 @@ class CampaignExporter:
             elements.append(Paragraph(f"Follow-up {i} (Day {day})", styles['SubHeader']))
             
             subject = followup.get('subject', 'N/A')
-            elements.append(Paragraph(f"<b>SUBJECT:</b> {subject}", styles['BodyText']))
+            elements.append(Paragraph(f"<b>SUBJECT:</b> {subject}", styles['CustomBody']))
             elements.append(Spacer(1, 0.08*inch))
             
             body = followup.get('body', 'N/A')
-            for line in body.split('\n'):
+            body_safe = body.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+            
+            for line in body_safe.split('\n'):
                 if line.strip():
                     elements.append(Paragraph(line.strip(), styles['EmailBody']))
             
@@ -329,6 +343,9 @@ class CampaignExporter:
         rec_lines = recommendations.split('\n')
         for line in rec_lines[:30]:  # First 30 lines to keep PDF concise
             line = line.strip()
+            # Escape XML characters
+            line = line.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+            
             if line.startswith('##'):
                 text = line.replace('##', '').strip()
                 elements.append(Paragraph(text, styles['SubHeader']))
@@ -337,19 +354,19 @@ class CampaignExporter:
                 elements.append(Paragraph(text, styles['SubHeader']))
             elif line.startswith('-'):
                 text = line.replace('-', '•', 1).strip()
-                elements.append(Paragraph(text, styles['BodyText']))
+                elements.append(Paragraph(text, styles['CustomBody']))
             elif line:
-                elements.append(Paragraph(line, styles['BodyText']))
+                elements.append(Paragraph(line, styles['CustomBody']))
         
         elements.append(Spacer(1, 0.3*inch))
-        elements.append(Paragraph("<i>Full strategic recommendations available in the web interface.</i>", styles['BodyText']))
+        elements.append(Paragraph("<i>Full strategic recommendations available in the web interface.</i>", styles['CustomBody']))
         
         # Footer
         elements.append(Spacer(1, 0.5*inch))
-        elements.append(Paragraph("─" * 80, styles['BodyText']))
+        elements.append(Paragraph("─" * 80, styles['CustomBody']))
         elements.append(Paragraph(
             f"<i>Generated by Cold Email Generator Pro | {datetime.utcnow().strftime('%B %d, %Y')}</i>",
-            styles['BodyText']
+            styles['CustomBody']
         ))
         
         # Build PDF
