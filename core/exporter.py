@@ -151,7 +151,7 @@ class CampaignExporter:
         
         return buffer
     
-def export_to_pdf(self, campaign_data: Dict) -> io.BytesIO:
+    def export_to_pdf(self, campaign_data: Dict) -> io.BytesIO:
         """
         Export campaign to professional PDF report
         
