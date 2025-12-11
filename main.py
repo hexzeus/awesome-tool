@@ -42,18 +42,18 @@ exporter = CampaignExporter()
 
 # Request models
 class GenerateRequest(BaseModel):
-    company_name: str = Field(..., min_length=1, max_length=200)
-    industry: str = Field(..., min_length=1, max_length=100)
-    offer: str = Field(..., min_length=10, max_length=500)
+    company_name: str = Field(default="", max_length=200)
+    industry: str = Field(default="", max_length=100)
+    offer: str = Field(default="", max_length=500)
     style: str = Field(default="professional", pattern="^(professional|casual|bold)$")
     company_size: str = Field(default="unknown")
     user_api_key: Optional[str] = None
 
 
 class DemoRequest(BaseModel):
-    company_name: str = Field(..., min_length=1, max_length=200)
-    industry: str = Field(..., min_length=1, max_length=100)
-    offer: str = Field(..., min_length=10, max_length=500)
+    company_name: str = Field(default="", max_length=200)
+    industry: str = Field(default="", max_length=100)
+    offer: str = Field(default="", max_length=500)
     style: str = Field(default="professional", pattern="^(professional|casual|bold)$")
 
 
@@ -81,15 +81,20 @@ async def generate_demo(request: DemoRequest):
     """
     
     try:
+        # Use defaults if empty
+        company_name = request.company_name.strip() or "TechCorp Solutions"
+        industry = request.industry.strip() or "SaaS"
+        offer = request.offer.strip() or "We help SaaS companies automate their customer onboarding with AI-powered workflows that reduce time-to-value by 50%"
+        
         # Generate limited demo using our API key
         generator = EmailGenerator(api_key=None)
         
         # Generate analysis only
         print("Demo: Generating analysis...")
         analysis = await generator._analyze_company(
-            company_name=request.company_name,
-            industry=request.industry,
-            offer=request.offer,
+            company_name=company_name,
+            industry=industry,
+            offer=offer,
             company_size="unknown"
         )
         
@@ -99,8 +104,8 @@ async def generate_demo(request: DemoRequest):
             analysis=analysis,
             approach="problem_aware",
             style=request.style,
-            company_name=request.company_name,
-            offer=request.offer
+            company_name=company_name,
+            offer=offer
         )
         
         # Return demo result with watermark
@@ -110,13 +115,13 @@ async def generate_demo(request: DemoRequest):
             "message": "🎉 This is a DEMO result. Purchase for 5 complete emails + follow-ups + strategic recommendations.",
             "result": {
                 "company": {
-                    "name": request.company_name,
-                    "industry": request.industry,
+                    "name": company_name,
+                    "industry": industry,
                     "size": "unknown"
                 },
                 "analysis": {
                     "strategic_brief": {
-                        "top_3_pain_points": analysis.get('strategic_brief', {}).get('top_3_pain_points', [])[:2],  # Only 2
+                        "top_3_pain_points": analysis.get('strategic_brief', {}).get('top_3_pain_points', [])[:2],
                         "note": "⚡ Full analysis with objections, value props, and hooks available in paid version"
                     }
                 },
