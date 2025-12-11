@@ -1,53 +1,54 @@
-import io
-from typing import Dict
+from io import BytesIO
 from datetime import datetime
 from docx import Document
 from docx.shared import Inches, Pt, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
+from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, PageBreak, Table, TableStyle
-from reportlab.lib import colors
-from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_JUSTIFY
+from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_JUSTIFY
+from reportlab.pdfgen import canvas
+import textwrap
 
 
 class CampaignExporter:
-    """Export campaign results to various formats"""
+    """Export cold email campaigns to professional DOCX and PDF formats"""
     
     def __init__(self):
-        pass
+        self.purple = RGBColor(124, 58, 237)  # #7C3AED
+        self.dark_purple = RGBColor(91, 33, 182)  # #5B21B6
+        self.green = RGBColor(16, 185, 129)  # #10B981
+        self.red = RGBColor(239, 68, 68)  # #EF4444
+        self.gray = RGBColor(107, 114, 128)  # #6B7280
     
-    def export_to_docx(self, campaign_data: Dict) -> io.BytesIO:
-        """
-        Export campaign to professional Word document
+    def export_to_docx(self, campaign_data: dict) -> BytesIO:
+        """Export campaign to beautiful DOCX format"""
         
-        Returns:
-            BytesIO buffer containing .docx file
-        """
         doc = Document()
         
-        # Set document styling
-        style = doc.styles['Normal']
-        font = style.font
-        font.name = 'Calibri'
-        font.size = Pt(11)
-        
         # Title
-        title = doc.add_heading('Cold Email Campaign', 0)
+        title = doc.add_heading('Cold Email Campaign Report', 0)
         title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        title_run = title.runs[0]
+        title_run.font.color.rgb = self.purple
+        title_run.font.size = Pt(28)
+        title_run.bold = True
         
-        # Company info
+        doc.add_paragraph()
+        
+        # Company Info
         company = campaign_data.get('company', {})
-        doc.add_heading(f"Target: {company.get('name', 'Unknown')}", level=2)
-        
         info = doc.add_paragraph()
-        info.add_run(f"Industry: ").bold = True
+        info.add_run('Target Company: ').bold = True
+        info.add_run(f"{company.get('name', 'N/A')}\n")
+        info.add_run('Industry: ').bold = True
         info.add_run(f"{company.get('industry', 'N/A')}\n")
-        info.add_run(f"Company Size: ").bold = True
+        info.add_run('Company Size: ').bold = True
         info.add_run(f"{company.get('size', 'N/A')}\n")
-        info.add_run(f"Generated: ").bold = True
-        info.add_run(f"{datetime.utcnow().strftime('%B %d, %Y')}\n")
+        info.add_run('Generated: ').bold = True
+        info.add_run(datetime.utcnow().strftime('%B %d, %Y at %H:%M UTC'))
         
         doc.add_paragraph()
         
@@ -56,17 +57,19 @@ class CampaignExporter:
         analysis = campaign_data.get('analysis', {}).get('strategic_brief', {})
         
         # Pain Points
-        pain_points = analysis.get('top_3_pain_points', [])
-        if pain_points:
-            doc.add_heading('🎯 Top 3 Pain Points', level=2)
-            for i, pain in enumerate(pain_points, 1):
-                p = doc.add_paragraph(style='List Number')
-                p.add_run(f"{pain.get('pain_point', 'N/A')}").bold = True
-                doc.add_paragraph(pain.get('description', ''), style='List Bullet 2')
-                if pain.get('urgency'):
-                    urgency = doc.add_paragraph(style='List Bullet 2')
-                    urgency.add_run(f"Urgency: ").italic = True
-                    urgency.add_run(pain['urgency'])
+        doc.add_heading('Top 3 Pain Points', level=2)
+        for i, pain in enumerate(analysis.get('top_3_pain_points', []), 1):
+            p = doc.add_paragraph(f"{i}. {pain}", style='List Bullet')
+        
+        # Objections
+        doc.add_heading('Key Objections', level=2)
+        for obj in analysis.get('key_objections', []):
+            doc.add_paragraph(f"• {obj}", style='List Bullet')
+        
+        # Value Props
+        doc.add_heading('Resonant Value Propositions', level=2)
+        for vp in analysis.get('resonant_value_propositions', []):
+            doc.add_paragraph(f"• {vp}", style='List Bullet')
         
         doc.add_page_break()
         
@@ -74,299 +77,291 @@ class CampaignExporter:
         doc.add_heading('📧 Cold Email Campaigns', level=1)
         
         emails = campaign_data.get('cold_emails', {})
-        for i, (approach, email_data) in enumerate(emails.items(), 1):
-            doc.add_heading(f"Approach {i}: {approach.replace('_', ' ').title()}", level=2)
+        for approach, email_data in emails.items():
+            # Approach title
+            approach_title = approach.replace('_', ' ').title()
+            heading = doc.add_heading(f"Approach: {approach_title}", level=2)
+            heading.runs[0].font.color.rgb = self.purple
             
             # Subject
-            subject = doc.add_paragraph()
-            subject.add_run('SUBJECT: ').bold = True
-            subject.add_run(email_data.get('subject', 'N/A'))
+            subject_para = doc.add_paragraph()
+            subject_para.add_run('SUBJECT: ').bold = True
+            subject_para.add_run(email_data.get('subject', ''))
             
-            # Subject variants
+            # Email body
+            email_body = email_data.get('email', '')
+            doc.add_paragraph(email_body)
+            
+            # Variants
             variants = email_data.get('subject_variants', [])
             if variants:
                 var_para = doc.add_paragraph()
-                var_para.add_run('Alternative Subjects: ').bold = True
-                for variant in variants:
-                    doc.add_paragraph(f"• {variant}", style='List Bullet')
+                var_para.add_run('Alternative Subjects:\n').bold = True
+                for i, variant in enumerate(variants, 1):
+                    var_para.add_run(f"  {i}. {variant}\n")
             
-            doc.add_paragraph()
-            
-            # Email body
-            body = doc.add_paragraph()
-            body.add_run('EMAIL BODY:\n').bold = True
-            
-            # Add email text with proper formatting
-            email_text = email_data.get('email', 'N/A')
-            for line in email_text.split('\n'):
-                if line.strip():
-                    doc.add_paragraph(line.strip())
-            
-            doc.add_paragraph()
-            doc.add_paragraph('─' * 80)
             doc.add_paragraph()
         
         doc.add_page_break()
         
-        # Follow-up Sequence
-        doc.add_heading('📅 Follow-Up Sequence', level=1)
+        # Follow-ups
+        doc.add_heading('📬 Follow-Up Sequence', level=1)
         
         followups = campaign_data.get('followup_sequence', [])
-        for i, followup in enumerate(followups, 1):
-            doc.add_heading(f"Follow-up {i} (Day {followup.get('day', 'N/A')})", level=2)
+        for followup in followups:
+            day = followup.get('day', 0)
+            heading = doc.add_heading(f"Follow-up {followups.index(followup) + 1} (Day {day})", level=2)
+            heading.runs[0].font.color.rgb = self.green
             
-            subject = doc.add_paragraph()
-            subject.add_run('SUBJECT: ').bold = True
-            subject.add_run(followup.get('subject', 'N/A'))
+            subject_para = doc.add_paragraph()
+            subject_para.add_run('SUBJECT: ').bold = True
+            subject_para.add_run(followup.get('subject', ''))
             
-            doc.add_paragraph()
-            
-            body_text = followup.get('body', 'N/A')
-            for line in body_text.split('\n'):
-                if line.strip():
-                    doc.add_paragraph(line.strip())
-            
+            doc.add_paragraph(followup.get('body', ''))
             doc.add_paragraph()
         
         doc.add_page_break()
         
         # Recommendations
         doc.add_heading('💡 Strategic Recommendations', level=1)
-        recommendations = campaign_data.get('recommendations', {}).get('strategic_recommendations', 'N/A')
-        
-        # Split and add recommendations
-        for line in recommendations.split('\n'):
-            if line.strip().startswith('#'):
-                # Header
-                level = line.count('#')
-                text = line.replace('#', '').strip()
-                doc.add_heading(text, level=min(level, 3))
-            elif line.strip():
-                doc.add_paragraph(line.strip())
+        recommendations = campaign_data.get('recommendations', {}).get('strategic_recommendations', '')
+        doc.add_paragraph(recommendations)
         
         # Save to BytesIO
-        buffer = io.BytesIO()
+        buffer = BytesIO()
         doc.save(buffer)
         buffer.seek(0)
         
         return buffer
     
-    def export_to_pdf(self, campaign_data: Dict) -> io.BytesIO:
-        """
-        Export campaign to professional PDF report
+    def export_to_pdf(self, campaign_data: dict) -> BytesIO:
+        """Export campaign to AWARD-WINNING PDF format"""
         
-        Returns:
-            BytesIO buffer containing PDF file
-        """
-        buffer = io.BytesIO()
-        doc = SimpleDocTemplate(buffer, pagesize=letter,
-                                rightMargin=72, leftMargin=72,
-                                topMargin=72, bottomMargin=18)
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(
+            buffer,
+            pagesize=letter,
+            rightMargin=50,
+            leftMargin=50,
+            topMargin=50,
+            bottomMargin=50
+        )
         
-        # Container for the 'Flowable' objects
+        # Container for elements
         elements = []
         
-        # Define styles - CHECK IF EXISTS FIRST
+        # Styles
         styles = getSampleStyleSheet()
         
-        # Only add if not exists
-        if 'CustomTitle' not in styles:
-            styles.add(ParagraphStyle(
-                name='CustomTitle',
-                parent=styles['Heading1'],
-                fontSize=24,
-                textColor=colors.HexColor('#667eea'),
-                spaceAfter=30,
-                alignment=TA_CENTER
-            ))
+        # Custom styles
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=28,
+            textColor=colors.HexColor('#7C3AED'),
+            spaceAfter=30,
+            alignment=TA_CENTER,
+            fontName='Helvetica-Bold'
+        )
         
-        if 'SectionHeader' not in styles:
-            styles.add(ParagraphStyle(
-                name='SectionHeader',
-                parent=styles['Heading2'],
-                fontSize=16,
-                textColor=colors.HexColor('#764ba2'),
-                spaceAfter=12,
-                spaceBefore=12
-            ))
+        section_style = ParagraphStyle(
+            'SectionHeader',
+            parent=styles['Heading2'],
+            fontSize=18,
+            textColor=colors.HexColor('#5B21B6'),
+            spaceAfter=12,
+            spaceBefore=20,
+            fontName='Helvetica-Bold'
+        )
         
-        if 'SubHeader' not in styles:
-            styles.add(ParagraphStyle(
-                name='SubHeader',
-                parent=styles['Heading3'],
-                fontSize=13,
-                textColor=colors.HexColor('#667eea'),
-                spaceAfter=10,
-                spaceBefore=10
-            ))
+        subsection_style = ParagraphStyle(
+            'SubSection',
+            parent=styles['Heading3'],
+            fontSize=14,
+            textColor=colors.HexColor('#7C3AED'),
+            spaceAfter=8,
+            spaceBefore=12,
+            fontName='Helvetica-Bold'
+        )
         
-        if 'CustomBody' not in styles:
-            styles.add(ParagraphStyle(
-                name='CustomBody',
-                parent=styles['Normal'],
-                fontSize=10,
-                leading=14,
-                alignment=TA_JUSTIFY
-            ))
+        body_style = ParagraphStyle(
+            'CustomBody',
+            parent=styles['BodyText'],
+            fontSize=11,
+            leading=16,
+            textColor=colors.black,
+            alignment=TA_JUSTIFY,
+            fontName='Helvetica'
+        )
         
-        if 'EmailBody' not in styles:
-            styles.add(ParagraphStyle(
-                name='EmailBody',
-                parent=styles['Normal'],
-                fontSize=9,
-                leading=12,
-                leftIndent=20,
-                rightIndent=20,
-                spaceAfter=6
-            ))
+        email_style = ParagraphStyle(
+            'EmailBody',
+            parent=styles['BodyText'],
+            fontSize=10,
+            leading=14,
+            textColor=colors.HexColor('#1F2937'),
+            alignment=TA_LEFT,
+            fontName='Helvetica',
+            leftIndent=10,
+            rightIndent=10
+        )
         
         # Title
-        elements.append(Paragraph("Cold Email Campaign Report", styles['CustomTitle']))
+        elements.append(Paragraph("Cold Email Campaign Report", title_style))
         elements.append(Spacer(1, 0.3*inch))
         
-        # Company info
+        # Company Info
         company = campaign_data.get('company', {})
-        elements.append(Paragraph(f"<b>Target Company:</b> {company.get('name', 'Unknown')}", styles['CustomBody']))
-        elements.append(Paragraph(f"<b>Industry:</b> {company.get('industry', 'N/A')}", styles['CustomBody']))
-        elements.append(Paragraph(f"<b>Company Size:</b> {company.get('size', 'N/A')}", styles['CustomBody']))
-        elements.append(Paragraph(f"<b>Generated:</b> {datetime.utcnow().strftime('%B %d, %Y at %H:%M UTC')}", styles['CustomBody']))
-        
+        info_text = f"""
+        <b>Target Company:</b> {self._escape(company.get('name', 'N/A'))}<br/>
+        <b>Industry:</b> {self._escape(company.get('industry', 'N/A'))}<br/>
+        <b>Company Size:</b> {self._escape(company.get('size', 'N/A'))}<br/>
+        <b>Generated:</b> {datetime.utcnow().strftime('%B %d, %Y at %H:%M UTC')}
+        """
+        elements.append(Paragraph(info_text, body_style))
         elements.append(Spacer(1, 0.4*inch))
         
         # Strategic Analysis
-        elements.append(Paragraph("📊 Strategic Analysis", styles['SectionHeader']))
-        elements.append(Spacer(1, 0.1*inch))
-        
+        elements.append(Paragraph("📊 Strategic Analysis", section_style))
         analysis = campaign_data.get('analysis', {}).get('strategic_brief', {})
         
         # Pain Points
-        pain_points = analysis.get('top_3_pain_points', [])
-        if pain_points:
-            elements.append(Paragraph("🎯 Top 3 Pain Points", styles['SubHeader']))
-            for i, pain in enumerate(pain_points, 1):
-                elements.append(Paragraph(f"<b>{i}. {pain.get('pain_point', 'N/A')}</b>", styles['CustomBody']))
-                elements.append(Paragraph(pain.get('description', ''), styles['EmailBody']))
-                if pain.get('urgency'):
-                    elements.append(Paragraph(f"<i>Urgency: {pain['urgency']}</i>", styles['EmailBody']))
-                elements.append(Spacer(1, 0.1*inch))
+        elements.append(Paragraph("■ Top 3 Pain Points", subsection_style))
+        for i, pain in enumerate(analysis.get('top_3_pain_points', []), 1):
+            wrapped = self._wrap_text(pain, 90)
+            elements.append(Paragraph(f"{i}. {self._escape(wrapped)}", body_style))
+            elements.append(Spacer(1, 0.1*inch))
         
-        # Key Objections
-        objections = analysis.get('key_objections', [])
-        if objections and len(objections) > 0:
-            elements.append(Spacer(1, 0.2*inch))
-            elements.append(Paragraph("🛡️ Key Objections", styles['SubHeader']))
-            for obj in objections[:3]:  # Top 3
-                if obj.get('objection'):
-                    elements.append(Paragraph(f"<b>Objection:</b> {obj['objection']}", styles['CustomBody']))
-                    if obj.get('reframe_strategy'):
-                        elements.append(Paragraph(f"<b>Strategy:</b> {obj['reframe_strategy']}", styles['EmailBody']))
-                    elements.append(Spacer(1, 0.08*inch))
+        # Objections
+        elements.append(Spacer(1, 0.2*inch))
+        elements.append(Paragraph("■ Key Objections", subsection_style))
+        for obj in analysis.get('key_objections', []):
+            wrapped = self._wrap_text(obj, 90)
+            elements.append(Paragraph(f"• {self._escape(wrapped)}", body_style))
+            elements.append(Spacer(1, 0.08*inch))
         
+        # Value Props
+        elements.append(Spacer(1, 0.2*inch))
+        elements.append(Paragraph("■ Resonant Value Propositions", subsection_style))
+        for vp in analysis.get('resonant_value_propositions', []):
+            wrapped = self._wrap_text(vp, 90)
+            elements.append(Paragraph(f"• {self._escape(wrapped)}", body_style))
+            elements.append(Spacer(1, 0.08*inch))
+        
+        # PAGE BREAK
         elements.append(PageBreak())
         
         # Cold Emails
-        elements.append(Paragraph("📧 Cold Email Campaigns", styles['SectionHeader']))
+        elements.append(Paragraph("📧 Cold Email Campaigns", section_style))
         elements.append(Spacer(1, 0.2*inch))
         
         emails = campaign_data.get('cold_emails', {})
-        for i, (approach, email_data) in enumerate(emails.items(), 1):
-            elements.append(Paragraph(f"Approach {i}: {approach.replace('_', ' ').title()}", styles['SubHeader']))
+        for approach, email_data in emails.items():
+            approach_title = approach.replace('_', ' ').title()
+            elements.append(Paragraph(f"Approach: {approach_title}", subsection_style))
             
-            # Subject line
-            subject = email_data.get('subject', 'N/A')
-            elements.append(Paragraph(f"<b>SUBJECT:</b> {subject}", styles['CustomBody']))
-            
-            # Subject variants
-            variants = email_data.get('subject_variants', [])
-            if variants:
-                variants_text = " | ".join(variants)
-                elements.append(Paragraph(f"<i>Alternatives:</i> {variants_text}", styles['EmailBody']))
-            
+            # Subject
+            subject = self._escape(email_data.get('subject', ''))
+            elements.append(Paragraph(f"<b>SUBJECT:</b> {subject}", body_style))
             elements.append(Spacer(1, 0.1*inch))
             
-            # Email body - escape for XML
-            email_text = email_data.get('email', 'N/A')
-            email_text_safe = email_text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+            # Email body with wrapping
+            email_body = email_data.get('email', '')
+            wrapped_body = self._wrap_text(email_body, 85)
             
-            # Create bordered box for email
-            email_table = Table([[email_text_safe]], colWidths=[6.5*inch])
+            # Create table for email body (better formatting)
+            email_table = Table(
+                [[Paragraph(self._escape(wrapped_body), email_style)]],
+                colWidths=[6.5*inch]
+            )
             email_table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#f8f9fa')),
-                ('BORDER', (0, 0), (-1, -1), 1, colors.HexColor('#667eea')),
-                ('PADDING', (0, 0), (-1, -1), 12),
-                ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#F9FAFB')),
+                ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
+                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
                 ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
-                ('FONTSIZE', (0, 0), (-1, -1), 9),
+                ('FONTSIZE', (0, 0), (-1, -1), 10),
+                ('TOPPADDING', (0, 0), (-1, -1), 12),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
+                ('LEFTPADDING', (0, 0), (-1, -1), 12),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 12),
+                ('BOX', (0, 0), (-1, -1), 1, colors.HexColor('#E5E7EB')),
             ]))
-            
             elements.append(email_table)
-            elements.append(Spacer(1, 0.3*inch))
             
-            # Add page break after every 2 emails
-            if i % 2 == 0 and i < len(emails):
-                elements.append(PageBreak())
+            # Variants
+            variants = email_data.get('subject_variants', [])
+            if variants:
+                elements.append(Spacer(1, 0.1*inch))
+                elements.append(Paragraph("<b>Alternative Subjects:</b>", body_style))
+                for i, variant in enumerate(variants, 1):
+                    wrapped_var = self._wrap_text(variant, 85)
+                    elements.append(Paragraph(f"  {i}. {self._escape(wrapped_var)}", body_style))
+            
+            elements.append(Spacer(1, 0.3*inch))
         
-        if len(emails) % 2 != 0:  # Only add page break if we didn't just add one
-            elements.append(PageBreak())
+        # PAGE BREAK
+        elements.append(PageBreak())
         
-        # Follow-up Sequence
-        elements.append(Paragraph("📅 Follow-Up Sequence", styles['SectionHeader']))
+        # Follow-ups
+        elements.append(Paragraph("📬 Follow-Up Sequence", section_style))
         elements.append(Spacer(1, 0.2*inch))
         
         followups = campaign_data.get('followup_sequence', [])
         for i, followup in enumerate(followups, 1):
-            day = followup.get('day', 'N/A')
-            elements.append(Paragraph(f"Follow-up {i} (Day {day})", styles['SubHeader']))
+            day = followup.get('day', 0)
+            elements.append(Paragraph(f"Follow-up {i} (Day {day})", subsection_style))
             
-            subject = followup.get('subject', 'N/A')
-            elements.append(Paragraph(f"<b>SUBJECT:</b> {subject}", styles['CustomBody']))
-            elements.append(Spacer(1, 0.08*inch))
+            # Subject
+            subject = self._escape(followup.get('subject', ''))
+            elements.append(Paragraph(f"<b>SUBJECT:</b> {subject}", body_style))
+            elements.append(Spacer(1, 0.1*inch))
             
-            body = followup.get('body', 'N/A')
-            body_safe = body.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+            # Body
+            body = followup.get('body', '')
+            wrapped_body = self._wrap_text(body, 85)
             
-            for line in body_safe.split('\n'):
-                if line.strip():
-                    elements.append(Paragraph(line.strip(), styles['EmailBody']))
-            
-            elements.append(Spacer(1, 0.2*inch))
+            followup_table = Table(
+                [[Paragraph(self._escape(wrapped_body), email_style)]],
+                colWidths=[6.5*inch]
+            )
+            followup_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#ECFDF5')),
+                ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
+                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+                ('FONTSIZE', (0, 0), (-1, -1), 10),
+                ('TOPPADDING', (0, 0), (-1, -1), 12),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
+                ('LEFTPADDING', (0, 0), (-1, -1), 12),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 12),
+                ('BOX', (0, 0), (-1, -1), 1, colors.HexColor('#10B981')),
+            ]))
+            elements.append(followup_table)
+            elements.append(Spacer(1, 0.3*inch))
         
+        # PAGE BREAK
         elements.append(PageBreak())
         
-        # Recommendations Summary
-        elements.append(Paragraph("💡 Strategic Recommendations", styles['SectionHeader']))
-        elements.append(Spacer(1, 0.1*inch))
+        # Recommendations
+        elements.append(Paragraph("💡 Strategic Recommendations", section_style))
+        elements.append(Spacer(1, 0.2*inch))
         
-        recommendations = campaign_data.get('recommendations', {}).get('strategic_recommendations', 'N/A')
-        
-        # Parse and add first section of recommendations
-        rec_lines = recommendations.split('\n')
-        for line in rec_lines[:30]:  # First 30 lines to keep PDF concise
-            line = line.strip()
-            # Escape XML characters
-            line = line.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
-            
-            if line.startswith('##'):
-                text = line.replace('##', '').strip()
-                elements.append(Paragraph(text, styles['SubHeader']))
-            elif line.startswith('#'):
-                text = line.replace('#', '').strip()
-                elements.append(Paragraph(text, styles['SubHeader']))
-            elif line.startswith('-'):
-                text = line.replace('-', '•', 1).strip()
-                elements.append(Paragraph(text, styles['CustomBody']))
-            elif line:
-                elements.append(Paragraph(line, styles['CustomBody']))
-        
-        elements.append(Spacer(1, 0.3*inch))
-        elements.append(Paragraph("<i>Full strategic recommendations available in the web interface.</i>", styles['CustomBody']))
+        recommendations = campaign_data.get('recommendations', {}).get('strategic_recommendations', '')
+        wrapped_rec = self._wrap_text(recommendations, 95)
+        elements.append(Paragraph(self._escape(wrapped_rec), body_style))
         
         # Footer
         elements.append(Spacer(1, 0.5*inch))
-        elements.append(Paragraph("─" * 80, styles['CustomBody']))
+        footer_style = ParagraphStyle(
+            'Footer',
+            parent=styles['Normal'],
+            fontSize=9,
+            textColor=colors.HexColor('#6B7280'),
+            alignment=TA_CENTER
+        )
         elements.append(Paragraph(
-            f"<i>Generated by Cold Email Generator Pro | {datetime.utcnow().strftime('%B %d, %Y')}</i>",
-            styles['CustomBody']
+            f"Generated by Cold Email Generator Pro | {datetime.utcnow().strftime('%B %d, %Y')}",
+            footer_style
         ))
         
         # Build PDF
@@ -374,3 +369,34 @@ class CampaignExporter:
         buffer.seek(0)
         
         return buffer
+    
+    def _wrap_text(self, text: str, width: int = 90) -> str:
+        """Wrap text to prevent overflow"""
+        if not text:
+            return ""
+        
+        lines = text.split('\n')
+        wrapped_lines = []
+        
+        for line in lines:
+            if len(line) <= width:
+                wrapped_lines.append(line)
+            else:
+                wrapped = textwrap.fill(line, width=width, break_long_words=False, break_on_hyphens=False)
+                wrapped_lines.append(wrapped)
+        
+        return '\n'.join(wrapped_lines)
+    
+    def _escape(self, text: str) -> str:
+        """Escape XML characters for reportlab"""
+        if not text:
+            return ""
+        
+        text = str(text)
+        text = text.replace('&', '&amp;')
+        text = text.replace('<', '&lt;')
+        text = text.replace('>', '&gt;')
+        text = text.replace('"', '&quot;')
+        text = text.replace("'", '&apos;')
+        
+        return text
