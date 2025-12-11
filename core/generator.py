@@ -236,14 +236,14 @@ VARIANT_2: [alternative subject line]"""
         return followups
     
     async def _generate_metadata(self, all_emails: str) -> Dict:
-        """Stage 4: Strategic recommendations"""
+        """Stage 4: Strategic recommendations with full output"""
         
         metadata_prompt = METADATA_USER.format(emails=all_emails)
         
         response = await self.claude.generate(
             system_prompt=METADATA_SYSTEM,
             user_prompt=metadata_prompt,
-            max_tokens=2500,  # Increased from 1500
+            max_tokens=4000,  # INCREASED from 2500 to prevent cut-off
             temperature=0.7
         )
         

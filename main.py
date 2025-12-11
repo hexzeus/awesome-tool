@@ -190,6 +190,25 @@ async def generate_campaign(
     if not is_valid:
         raise HTTPException(status_code=401, detail=error)
     
+    # Validate form data thoroughly
+    if not request.company_name or len(request.company_name.strip()) < 2:
+        raise HTTPException(
+            status_code=422,
+            detail="Company name is required (minimum 2 characters)"
+        )
+    
+    if not request.industry or len(request.industry.strip()) < 2:
+        raise HTTPException(
+            status_code=422,
+            detail="Industry is required (minimum 2 characters)"
+        )
+    
+    if not request.offer or len(request.offer.strip()) < 10:
+        raise HTTPException(
+            status_code=422,
+            detail="Offer description is required (minimum 10 characters)"
+        )
+    
     # Check usage limits
     can_use, current_uses, needs_own_key = usage_tracker.check_usage(license_key)
     
@@ -207,9 +226,9 @@ async def generate_campaign(
         generator = EmailGenerator(api_key=api_key_to_use)
         
         result = await generator.generate_campaign(
-            company_name=request.company_name,
-            industry=request.industry,
-            offer=request.offer,
+            company_name=request.company_name.strip(),
+            industry=request.industry.strip(),
+            offer=request.offer.strip(),
             style=request.style,
             company_size=request.company_size
         )
