@@ -28,16 +28,16 @@ class GumroadValidator:
         self.api_url = "https://api.gumroad.com/v2/licenses/verify"
         print(f"✓ Gumroad initialized with {len(self.product_ids)} product tiers")
 
-    async def verify_license(self, license_key: str) -> Tuple[bool, Optional[str]]:
+    async def verify_license(self, license_key: str) -> Tuple[bool, Optional[str], Optional[str]]:
         """
         Verify license key with Gumroad API across ALL tier products
 
         Returns:
-            (is_valid, error_message)
+            (is_valid, error_message, product_id)
         """
 
         if not license_key or len(license_key) < 10:
-            return False, "Invalid license key format"
+            return False, "Invalid license key format", None
 
         print(f"→ Verifying license: {license_key[:20]}... across {len(self.product_ids)} tiers")
 
@@ -61,21 +61,21 @@ class GumroadValidator:
 
                         # Check if refunded or chargebacked
                         if purchase.get("refunded"):
-                            return False, "License key has been refunded"
+                            return False, "License key has been refunded", None
 
                         if purchase.get("chargebacked"):
-                            return False, "License key has been chargebacked"
+                            return False, "License key has been chargebacked", None
 
-                        print(f"✓ License valid for tier: {tier_name}")
-                        return True, None
+                        print(f"✓ License valid for tier: {tier_name} (product_id: {product_id})")
+                        return True, None, product_id
 
                 # No match found across any tier
                 print(f"✗ License invalid: Not found in any tier product")
-                return False, f"Invalid license key. Purchase at https://blazestudiox.gumroad.com/l/starter"
+                return False, f"Invalid license key. Purchase at https://blazestudiox.gumroad.com/l/starter", None
 
         except httpx.TimeoutException:
             print("✗ Gumroad API timeout")
-            return False, "License verification timeout. Please try again"
+            return False, "License verification timeout. Please try again", None
         except Exception as e:
             print(f"✗ Gumroad API error: {str(e)}")
-            return False, f"License verification failed: {str(e)}"
+            return False, f"License verification failed: {str(e)}", None

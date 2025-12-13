@@ -183,11 +183,15 @@ async def get_usage(authorization: str = Header(...)):
     if not license_key:
         raise HTTPException(status_code=401, detail="License key required")
 
-    # Validate license with Gumroad
-    is_valid, error = await gumroad.verify_license(license_key)
+    # Validate license with Gumroad and get product_id
+    is_valid, error, product_id = await gumroad.verify_license(license_key)
 
     if not is_valid:
         raise HTTPException(status_code=401, detail=error)
+
+    # Register/update tier if we got a product_id
+    if product_id:
+        tier_manager.register_license(license_key, product_id)
 
     # Get usage stats
     stats = usage_tracker.get_usage_stats(license_key)
@@ -225,11 +229,15 @@ async def generate_campaign(
             detail="License key required. Purchase at https://blazestudiox.gumroad.com/l/coldemailgeneratorpro"
         )
     
-    # Validate license with Gumroad
-    is_valid, error = await gumroad.verify_license(license_key)
-    
+    # Validate license with Gumroad and get product_id
+    is_valid, error, product_id = await gumroad.verify_license(license_key)
+
     if not is_valid:
         raise HTTPException(status_code=401, detail=error)
+
+    # Register/update tier if we got a product_id
+    if product_id:
+        tier_manager.register_license(license_key, product_id)
     
     # Validate form data thoroughly
     if not request.company_name or len(request.company_name.strip()) < 2:
@@ -352,11 +360,11 @@ async def export_campaign(
         raise HTTPException(status_code=401, detail="License key required")
     
     # Validate license
-    is_valid, error = await gumroad.verify_license(license_key)
-    
+    is_valid, error, product_id = await gumroad.verify_license(license_key)
+
     if not is_valid:
         raise HTTPException(status_code=401, detail=error)
-    
+
     try:
         campaign_data = request.campaign_data
         export_format = request.format
@@ -423,11 +431,15 @@ async def save_campaign(
     if not license_key:
         raise HTTPException(status_code=401, detail="License key required")
 
-    # Validate license
-    is_valid, error = await gumroad.verify_license(license_key)
+    # Validate license and get product_id
+    is_valid, error, product_id = await gumroad.verify_license(license_key)
 
     if not is_valid:
         raise HTTPException(status_code=401, detail=error)
+
+    # Register/update tier if we got a product_id
+    if product_id:
+        tier_manager.register_license(license_key, product_id)
 
     try:
         campaign_data = request.get('campaign_data')
@@ -471,11 +483,15 @@ async def list_campaigns(
     if not license_key:
         raise HTTPException(status_code=401, detail="License key required")
 
-    # Validate license
-    is_valid, error = await gumroad.verify_license(license_key)
+    # Validate license and get product_id
+    is_valid, error, product_id = await gumroad.verify_license(license_key)
 
     if not is_valid:
         raise HTTPException(status_code=401, detail=error)
+
+    # Register/update tier if we got a product_id
+    if product_id:
+        tier_manager.register_license(license_key, product_id)
 
     try:
         campaigns = campaign_store.list_campaigns(license_key, limit=limit, offset=offset)
@@ -510,7 +526,7 @@ async def get_campaign(
         raise HTTPException(status_code=401, detail="License key required")
 
     # Validate license
-    is_valid, error = await gumroad.verify_license(license_key)
+    is_valid, error, product_id = await gumroad.verify_license(license_key)
 
     if not is_valid:
         raise HTTPException(status_code=401, detail=error)
@@ -549,7 +565,7 @@ async def delete_campaign(
         raise HTTPException(status_code=401, detail="License key required")
 
     # Validate license
-    is_valid, error = await gumroad.verify_license(license_key)
+    is_valid, error, product_id = await gumroad.verify_license(license_key)
 
     if not is_valid:
         raise HTTPException(status_code=401, detail=error)
