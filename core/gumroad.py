@@ -3,63 +3,76 @@ import httpx
 from typing import Tuple, Optional
 
 class GumroadValidator:
-    """Validates Gumroad license keys"""
-    
+    """Validates Gumroad license keys across all tier products"""
+
     def __init__(self):
-        self.product_id = os.getenv("GUMROAD_PRODUCT_ID")
-        if not self.product_id:
-            raise ValueError("GUMROAD_PRODUCT_ID not configured")
-        
+        # Get all product IDs for all tiers
+        self.product_ids = []
+
+        # Add all tier product IDs
+        tier_ids = [
+            ("Starter", os.getenv("GUMROAD_PRODUCT_ID_STARTER")),
+            ("Pro", os.getenv("GUMROAD_PRODUCT_ID_PRO")),
+            ("Unlimited", os.getenv("GUMROAD_PRODUCT_ID_UNLIMITED")),
+            ("Agency", os.getenv("GUMROAD_PRODUCT_ID_AGENCY")),
+            ("Legacy Pro", os.getenv("GUMROAD_PRODUCT_ID"))  # Old product ID for backwards compatibility
+        ]
+
+        for tier_name, product_id in tier_ids:
+            if product_id:
+                self.product_ids.append((tier_name, product_id))
+
+        if not self.product_ids:
+            raise ValueError("No GUMROAD_PRODUCT_ID configured. Set at least one tier product ID.")
+
         self.api_url = "https://api.gumroad.com/v2/licenses/verify"
-        print(f"✓ Gumroad initialized with product_id: {self.product_id}")
-    
+        print(f"✓ Gumroad initialized with {len(self.product_ids)} product tiers")
+
     async def verify_license(self, license_key: str) -> Tuple[bool, Optional[str]]:
         """
-        Verify license key with Gumroad API
-        
+        Verify license key with Gumroad API across ALL tier products
+
         Returns:
             (is_valid, error_message)
         """
-        
+
         if not license_key or len(license_key) < 10:
             return False, "Invalid license key format"
-        
-        print(f"→ Verifying license: {license_key[:20]}...")
-        
+
+        print(f"→ Verifying license: {license_key[:20]}... across {len(self.product_ids)} tiers")
+
         try:
             async with httpx.AsyncClient(timeout=15.0) as client:
-                response = await client.post(
-                    self.api_url,
-                    data={
-                        "product_id": self.product_id,
-                        "license_key": license_key
-                    }
-                )
-                
-                print(f"← Gumroad response status: {response.status_code}")
-                
-                data = response.json()
-                print(f"← Gumroad response data: {data}")
-                
-                if response.status_code == 200 and data.get("success"):
-                    # Valid license
-                    purchase = data.get("purchase", {})
-                    
-                    # Check if refunded or chargebacked
-                    if purchase.get("refunded"):
-                        return False, "License key has been refunded"
-                    
-                    if purchase.get("chargebacked"):
-                        return False, "License key has been chargebacked"
-                    
-                    print("✓ License valid")
-                    return True, None
-                
-                else:
-                    # Invalid license
-                    print(f"✗ License invalid: {data.get('message', 'Unknown error')}")
-                    return False, f"Invalid license key. Purchase at https://blazestudiox.gumroad.com/l/coldemailgeneratorpro"
-                    
+                # Try each product ID until we find a match
+                for tier_name, product_id in self.product_ids:
+                    response = await client.post(
+                        self.api_url,
+                        data={
+                            "product_id": product_id,
+                            "license_key": license_key
+                        }
+                    )
+
+                    data = response.json()
+
+                    if response.status_code == 200 and data.get("success"):
+                        # Valid license found!
+                        purchase = data.get("purchase", {})
+
+                        # Check if refunded or chargebacked
+                        if purchase.get("refunded"):
+                            return False, "License key has been refunded"
+
+                        if purchase.get("chargebacked"):
+                            return False, "License key has been chargebacked"
+
+                        print(f"✓ License valid for tier: {tier_name}")
+                        return True, None
+
+                # No match found across any tier
+                print(f"✗ License invalid: Not found in any tier product")
+                return False, f"Invalid license key. Purchase at https://blazestudiox.gumroad.com/l/starter"
+
         except httpx.TimeoutException:
             print("✗ Gumroad API timeout")
             return False, "License verification timeout. Please try again"
