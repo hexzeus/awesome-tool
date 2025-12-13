@@ -607,6 +607,7 @@
 
         <!-- Campaign History Modal -->
         <div x-show="showCampaignHistory"
+            x-init="$watch('showCampaignHistory', value => { if (value) loadSavedCampaigns() })"
             class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop"
             @click.self="showCampaignHistory = false" x-transition:enter="transition ease-out duration-300"
             x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"

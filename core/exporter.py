@@ -346,10 +346,16 @@ class CampaignExporter:
         # Recommendations
         elements.append(Paragraph("💡 Strategic Recommendations", section_style))
         elements.append(Spacer(1, 0.2*inch))
-        
+
         recommendations = self._to_string(campaign_data.get('recommendations', {}).get('strategic_recommendations', ''))
-        wrapped_rec = self._wrap_text(recommendations, 95)
-        elements.append(Paragraph(self._escape(wrapped_rec), body_style))
+
+        # Split recommendations into paragraphs for better readability
+        rec_paragraphs = recommendations.split('\n\n')
+        for rec_para in rec_paragraphs:
+            if rec_para.strip():
+                wrapped_rec = self._wrap_text(rec_para.strip(), 95)
+                elements.append(Paragraph(self._escape(wrapped_rec), body_style))
+                elements.append(Spacer(1, 0.15*inch))  # Add spacing between paragraphs
         
         # Footer
         elements.append(Spacer(1, 0.5*inch))
@@ -372,16 +378,35 @@ class CampaignExporter:
         return buffer
     
     def _to_string(self, value) -> str:
-        """Convert any value to string safely"""
+        """Convert any value to string safely, handling dicts properly"""
         if value is None:
             return ""
         if isinstance(value, str):
             return value
         if isinstance(value, dict):
-            # For dicts, try to extract meaningful content
-            if 'text' in value:
-                return str(value['text'])
-            return str(value)
+            # Extract meaningful content from dict objects
+            parts = []
+
+            # Common fields to extract in priority order
+            priority_fields = ['pain_point', 'objection', 'value_proposition', 'description', 'why_it_works', 'urgency', 'text', 'content']
+
+            # First add priority fields if they exist
+            for field in priority_fields:
+                if field in value and value[field]:
+                    parts.append(str(value[field]))
+
+            # If no priority fields found, add all non-empty values
+            if not parts:
+                for k, v in value.items():
+                    if v and not k.startswith('_'):  # Skip empty and private fields
+                        parts.append(f"{k.replace('_', ' ').title()}: {v}")
+
+            return ' - '.join(parts) if parts else str(value)
+
+        if isinstance(value, (list, tuple)):
+            # Handle lists/tuples
+            return ', '.join(self._to_string(item) for item in value)
+
         return str(value)
     
     def _wrap_text(self, text: str, width: int = 90) -> str:
