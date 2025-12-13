@@ -1,7 +1,8 @@
 import json
 import asyncio
-from typing import Dict, Optional, List
+from typing import Dict, Optional, List, Literal
 from .claude import ClaudeClient
+from .openai_client import OpenAIClient
 from prompts.system_prompts import (
     ANALYSIS_SYSTEM, ANALYSIS_USER,
     EMAIL_SYSTEM, EMAIL_USER_APPROACH,
@@ -14,9 +15,23 @@ from prompts.system_prompts import (
 
 class EmailGenerator:
     """Orchestrates multi-stage cold email generation with parallel execution"""
-    
-    def __init__(self, api_key: Optional[str] = None):
-        self.claude = ClaudeClient(api_key)
+
+    def __init__(self, api_key: Optional[str] = None, model_provider: Literal["claude", "openai"] = "claude"):
+        """
+        Initialize email generator
+
+        Args:
+            api_key: API key for the chosen provider (optional, will use env var)
+            model_provider: Which AI provider to use ("claude" or "openai")
+        """
+        self.model_provider = model_provider
+
+        if model_provider == "claude":
+            self.client = ClaudeClient(api_key)
+        elif model_provider == "openai":
+            self.client = OpenAIClient(api_key)
+        else:
+            raise ValueError(f"Invalid model provider: {model_provider}. Must be 'claude' or 'openai'")
     
     async def generate_campaign(
         self,
@@ -100,7 +115,7 @@ class EmailGenerator:
             offer=offer
         )
         
-        response = await self.claude.generate(
+        response = await self.client.generate(
             system_prompt=ANALYSIS_SYSTEM,
             user_prompt=user_prompt,
             max_tokens=2000,
@@ -181,7 +196,7 @@ After the email, also provide 2 alternative subject lines:
 VARIANT_1: [alternative subject line]
 VARIANT_2: [alternative subject line]"""
         
-        response = await self.claude.generate(
+        response = await self.client.generate(
             system_prompt=email_system,
             user_prompt=email_prompt,
             max_tokens=1200,
@@ -212,7 +227,7 @@ VARIANT_2: [alternative subject line]"""
             analysis=json.dumps(analysis.get('strategic_brief', analysis), indent=2)
         )
         
-        response = await self.claude.generate(
+        response = await self.client.generate(
             system_prompt=FOLLOWUP_SYSTEM,
             user_prompt=followup_prompt,
             max_tokens=1500,
@@ -240,7 +255,7 @@ VARIANT_2: [alternative subject line]"""
         
         metadata_prompt = METADATA_USER.format(emails=all_emails)
         
-        response = await self.claude.generate(
+        response = await self.client.generate(
             system_prompt=METADATA_SYSTEM,
             user_prompt=metadata_prompt,
             max_tokens=4000,  # INCREASED from 2500 to prevent cut-off

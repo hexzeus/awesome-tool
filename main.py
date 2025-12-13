@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Header
+from fastapi import FastAPI, HTTPException, Header, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
@@ -10,6 +10,9 @@ from core.gumroad import GumroadValidator
 from core.usage import UsageTracker
 from core.generator import EmailGenerator
 from core.exporter import CampaignExporter
+from core.rate_limiter import DemoRateLimiter
+from core.campaign_store import CampaignStore
+from core.tier_manager import TierManager
 
 # Load environment variables
 load_dotenv()
@@ -38,6 +41,9 @@ app.add_middleware(
 gumroad = GumroadValidator()
 usage_tracker = UsageTracker()
 exporter = CampaignExporter()
+demo_limiter = DemoRateLimiter(max_demos=3, window_hours=24)  # 3 demos per 24 hours
+campaign_store = CampaignStore()
+tier_manager = TierManager()
 
 
 # Request models
@@ -48,6 +54,7 @@ class GenerateRequest(BaseModel):
     style: str = Field(default="professional", pattern="^(professional|casual|bold)$")
     company_size: str = Field(default="unknown")
     user_api_key: Optional[str] = None
+    model_provider: str = Field(default="claude", pattern="^(claude|openai)$")
 
 
 class DemoRequest(BaseModel):
@@ -75,16 +82,32 @@ async def root():
 
 
 @app.post("/api/demo")
-async def generate_demo(request: DemoRequest):
+async def generate_demo(demo_request: DemoRequest, request: Request):
     """
     Generate DEMO campaign (single email, no license required)
+    Rate limited to 3 demos per IP per 24 hours
     """
-    
+
+    # Get client IP
+    client_ip = request.client.host
+
+    # Check rate limit
+    is_allowed, current_count, remaining = demo_limiter.check_rate_limit(client_ip)
+
+    if not is_allowed:
+        seconds_until_reset = demo_limiter.get_time_until_reset(client_ip)
+        hours_until_reset = seconds_until_reset / 3600
+
+        raise HTTPException(
+            status_code=429,
+            detail=f"Demo limit reached ({current_count}/{demo_limiter.max_demos}). Try again in {hours_until_reset:.1f} hours or purchase full access at https://blazestudiox.gumroad.com/l/coldemailgeneratorpro"
+        )
+
     try:
-        # Use defaults if empty
-        company_name = request.company_name.strip() or "TechCorp Solutions"
-        industry = request.industry.strip() or "SaaS"
-        offer = request.offer.strip() or "We help SaaS companies automate their customer onboarding with AI-powered workflows that reduce time-to-value by 50%"
+        # Use user input if provided, otherwise use defaults
+        company_name = demo_request.company_name.strip() if demo_request.company_name and demo_request.company_name.strip() else "TechCorp Solutions"
+        industry = demo_request.industry.strip() if demo_request.industry and demo_request.industry.strip() else "SaaS"
+        offer = demo_request.offer.strip() if demo_request.offer and demo_request.offer.strip() else "We help SaaS companies automate their customer onboarding with AI-powered workflows that reduce time-to-value by 50%"
         
         # Generate limited demo using our API key
         generator = EmailGenerator(api_key=None)
@@ -103,10 +126,13 @@ async def generate_demo(request: DemoRequest):
         demo_email = await generator._generate_email_with_variants(
             analysis=analysis,
             approach="problem_aware",
-            style=request.style,
+            style=demo_request.style,
             company_name=company_name,
             offer=offer
         )
+
+        # Record successful demo request for rate limiting
+        demo_limiter.record_request(client_ip)
         
         # Return demo result with watermark
         return {
@@ -149,27 +175,37 @@ async def generate_demo(request: DemoRequest):
 
 @app.get("/api/usage")
 async def get_usage(authorization: str = Header(...)):
-    """Get usage statistics for a license key"""
-    
+    """Get usage statistics and tier information for a license key"""
+
     # Extract license key from Authorization header
     license_key = authorization.replace("Bearer ", "").strip()
-    
+
     if not license_key:
         raise HTTPException(status_code=401, detail="License key required")
-    
+
     # Validate license with Gumroad
     is_valid, error = await gumroad.verify_license(license_key)
-    
+
     if not is_valid:
         raise HTTPException(status_code=401, detail=error)
-    
+
     # Get usage stats
     stats = usage_tracker.get_usage_stats(license_key)
-    
+
+    # Get tier information
+    tier_info = tier_manager.get_tier_info(license_key)
+
+    # Check tier-based limits
+    current_uses = stats.get('uses', 0)
+    can_use, tier_limit, tier_name = tier_manager.check_tier_limits(license_key, current_uses)
+
     return {
         "success": True,
         "license_valid": True,
-        "usage": stats
+        "usage": stats,
+        "tier": tier_info,
+        "tier_limit_reached": not can_use,
+        "available_upgrades": tier_manager.get_upgrade_path(tier_name) if not can_use else []
     }
 
 
@@ -214,21 +250,49 @@ async def generate_campaign(
             detail="Offer description is required (minimum 10 characters)"
         )
     
-    # Check usage limits
-    can_use, current_uses, needs_own_key = usage_tracker.check_usage(license_key)
-    
-    if not can_use and not request.user_api_key:
+    # Check tier limits first
+    current_uses = usage_tracker.get_usage_stats(license_key).get('uses', 0)
+    can_use_tier, tier_limit, tier_name = tier_manager.check_tier_limits(license_key, current_uses)
+
+    if not can_use_tier:
+        tier_info = tier_manager.get_tier_info(license_key)
+
+        if tier_info.get('is_expired'):
+            raise HTTPException(
+                status_code=403,
+                detail=f"Your {tier_info['name']} tier has expired. Please renew or upgrade at https://blazestudiox.gumroad.com/l/coldemailgeneratorpro"
+            )
+
+        if tier_limit > 0:  # Not unlimited
+            upgrades = tier_manager.get_upgrade_path(tier_name)
+            upgrade_msg = ""
+            if upgrades:
+                next_tier = upgrades[0]
+                upgrade_msg = f" Upgrade to {next_tier['name']} for ${next_tier['price']} to continue."
+
+            raise HTTPException(
+                status_code=403,
+                detail=f"Tier limit reached ({current_uses}/{tier_limit} campaigns).{upgrade_msg}"
+            )
+
+    # Legacy check: also check old usage limits (backwards compatibility)
+    can_use_legacy, legacy_uses, needs_own_key = usage_tracker.check_usage(license_key)
+
+    if not can_use_legacy and not request.user_api_key:
         raise HTTPException(
             status_code=403,
-            detail=f"Free usage limit reached ({current_uses} uses). Please provide your Claude API key to continue."
+            detail=f"Free usage limit reached ({legacy_uses} uses). Please provide your Claude API key to continue."
         )
-    
-    # Determine which API key to use
+
+    # Determine which API key to use (prioritize tier-based limits)
     api_key_to_use = request.user_api_key if needs_own_key else None
     
     try:
-        # Generate campaign
-        generator = EmailGenerator(api_key=api_key_to_use)
+        # Generate campaign with selected model provider
+        generator = EmailGenerator(
+            api_key=api_key_to_use,
+            model_provider=request.model_provider
+        )
         
         result = await generator.generate_campaign(
             company_name=request.company_name.strip(),
@@ -335,6 +399,179 @@ async def health_check():
         "database": "connected",
         "version": "2.0.0"
     }
+
+
+# Campaign Management Endpoints
+
+@app.post("/api/campaigns")
+async def save_campaign(
+    request: dict,
+    authorization: str = Header(...)
+):
+    """
+    Save a campaign to database
+
+    Request body:
+    {
+        "campaign_data": {...}  // Complete campaign object
+    }
+    """
+
+    # Extract license key
+    license_key = authorization.replace("Bearer ", "").strip()
+
+    if not license_key:
+        raise HTTPException(status_code=401, detail="License key required")
+
+    # Validate license
+    is_valid, error = await gumroad.verify_license(license_key)
+
+    if not is_valid:
+        raise HTTPException(status_code=401, detail=error)
+
+    try:
+        campaign_data = request.get('campaign_data')
+
+        if not campaign_data:
+            raise HTTPException(status_code=400, detail="campaign_data is required")
+
+        # Save to database
+        campaign_id = campaign_store.save_campaign(license_key, campaign_data)
+
+        return {
+            "success": True,
+            "campaign_id": campaign_id,
+            "message": "Campaign saved successfully"
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to save campaign: {str(e)}"
+        )
+
+
+@app.get("/api/campaigns")
+async def list_campaigns(
+    authorization: str = Header(...),
+    limit: int = 50,
+    offset: int = 0
+):
+    """
+    List all campaigns for the authenticated user
+
+    Query params:
+    - limit: Max campaigns to return (default 50)
+    - offset: Number to skip for pagination (default 0)
+    """
+
+    # Extract license key
+    license_key = authorization.replace("Bearer ", "").strip()
+
+    if not license_key:
+        raise HTTPException(status_code=401, detail="License key required")
+
+    # Validate license
+    is_valid, error = await gumroad.verify_license(license_key)
+
+    if not is_valid:
+        raise HTTPException(status_code=401, detail=error)
+
+    try:
+        campaigns = campaign_store.list_campaigns(license_key, limit=limit, offset=offset)
+        total_count = campaign_store.count_campaigns(license_key)
+
+        return {
+            "success": True,
+            "campaigns": campaigns,
+            "total": total_count,
+            "limit": limit,
+            "offset": offset
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to list campaigns: {str(e)}"
+        )
+
+
+@app.get("/api/campaigns/{campaign_id}")
+async def get_campaign(
+    campaign_id: str,
+    authorization: str = Header(...)
+):
+    """Get a specific campaign by ID"""
+
+    # Extract license key
+    license_key = authorization.replace("Bearer ", "").strip()
+
+    if not license_key:
+        raise HTTPException(status_code=401, detail="License key required")
+
+    # Validate license
+    is_valid, error = await gumroad.verify_license(license_key)
+
+    if not is_valid:
+        raise HTTPException(status_code=401, detail=error)
+
+    try:
+        campaign = campaign_store.get_campaign(license_key, campaign_id)
+
+        if campaign is None:
+            raise HTTPException(status_code=404, detail="Campaign not found")
+
+        return {
+            "success": True,
+            "campaign": campaign
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to retrieve campaign: {str(e)}"
+        )
+
+
+@app.delete("/api/campaigns/{campaign_id}")
+async def delete_campaign(
+    campaign_id: str,
+    authorization: str = Header(...)
+):
+    """Delete a campaign"""
+
+    # Extract license key
+    license_key = authorization.replace("Bearer ", "").strip()
+
+    if not license_key:
+        raise HTTPException(status_code=401, detail="License key required")
+
+    # Validate license
+    is_valid, error = await gumroad.verify_license(license_key)
+
+    if not is_valid:
+        raise HTTPException(status_code=401, detail=error)
+
+    try:
+        deleted = campaign_store.delete_campaign(license_key, campaign_id)
+
+        if not deleted:
+            raise HTTPException(status_code=404, detail="Campaign not found")
+
+        return {
+            "success": True,
+            "message": "Campaign deleted successfully"
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to delete campaign: {str(e)}"
+        )
 
 
 # Error handlers

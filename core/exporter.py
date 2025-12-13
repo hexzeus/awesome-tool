@@ -7,7 +7,7 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, PageBreak, Table, TableStyle
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_JUSTIFY
 from reportlab.pdfgen import canvas
 import textwrap
@@ -253,9 +253,9 @@ class CampaignExporter:
             wrapped = self._wrap_text(vp_text, 90)
             elements.append(Paragraph(f"• {self._escape(wrapped)}", body_style))
             elements.append(Spacer(1, 0.08*inch))
-        
-        # PAGE BREAK
-        elements.append(PageBreak())
+
+        # Spacer before next section instead of hard page break
+        elements.append(Spacer(1, 0.5*inch))
         
         # Cold Emails
         elements.append(Paragraph("📧 Cold Email Campaigns", section_style))
@@ -303,12 +303,9 @@ class CampaignExporter:
                     variant_text = self._to_string(variant)
                     wrapped_var = self._wrap_text(variant_text, 85)
                     elements.append(Paragraph(f"  {i}. {self._escape(wrapped_var)}", body_style))
-            
-            elements.append(Spacer(1, 0.3*inch))
-        
-        # PAGE BREAK
-        elements.append(PageBreak())
-        
+
+            elements.append(Spacer(1, 0.4*inch))
+
         # Follow-ups
         elements.append(Paragraph("📬 Follow-Up Sequence", section_style))
         elements.append(Spacer(1, 0.2*inch))
@@ -344,10 +341,7 @@ class CampaignExporter:
                 ('BOX', (0, 0), (-1, -1), 1, colors.HexColor('#10B981')),
             ]))
             elements.append(followup_table)
-            elements.append(Spacer(1, 0.3*inch))
-        
-        # PAGE BREAK
-        elements.append(PageBreak())
+            elements.append(Spacer(1, 0.4*inch))
         
         # Recommendations
         elements.append(Paragraph("💡 Strategic Recommendations", section_style))

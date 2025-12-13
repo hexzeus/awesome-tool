@@ -1,0 +1,1654 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cold Email Generator Pro - 5 Campaigns in 90 Seconds</title>
+    <meta name="description"
+        content="Generate 5 professional cold email campaigns with AI. Strategic analysis, follow-ups, and expert recommendations in 90 seconds. Used by 500+ marketers.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+
+    <style>
+        [x-cloak] {
+            display: none !important;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(to bottom, #0a0a0a 0%, #1a0a2e 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 20% 50%, rgba(102, 126, 234, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(118, 75, 162, 0.08) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .content-wrapper {
+            position: relative;
+            z-index: 1;
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .gradient-border {
+            border: 2px solid transparent;
+            background: linear-gradient(#0a0a0a, #0a0a0a) padding-box,
+                linear-gradient(135deg, #667eea, #764ba2) border-box;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .glass-strong {
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 15px 0 rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px 0 rgba(102, 126, 234, 0.5);
+        }
+
+        .btn-primary:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: rgba(102, 126, 234, 0.12);
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: rgba(102, 126, 234, 0.2);
+            border-color: rgba(102, 126, 234, 0.5);
+            transform: translateY(-1px);
+        }
+
+        .btn-success {
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #10b981;
+            transition: all 0.3s ease;
+        }
+
+        .btn-success:hover:not(:disabled) {
+            background: rgba(16, 185, 129, 0.25);
+            border-color: rgba(16, 185, 129, 0.5);
+            transform: translateY(-1px);
+        }
+
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+            transition: all 0.3s ease;
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            background: rgba(239, 68, 68, 0.25);
+            border-color: rgba(239, 68, 68, 0.5);
+        }
+
+        input,
+        textarea,
+        select {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: #ffffff;
+            transition: all 0.2s ease;
+        }
+
+        select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23667eea'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            background-size: 1.5rem;
+            padding-right: 2.5rem;
+        }
+
+        select option {
+            background: #1a1a2e;
+            color: #ffffff;
+            padding: 8px;
+        }
+
+        input:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        input::placeholder,
+        textarea::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .fade-in {
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .slide-up {
+            animation: slideUp 0.4s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top-color: #667eea;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.025em;
+        }
+
+        .badge-success {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.25);
+        }
+
+        .badge-warning {
+            background: rgba(245, 158, 11, 0.15);
+            color: #f59e0b;
+            border: 1px solid rgba(245, 158, 11, 0.25);
+        }
+
+        .badge-demo {
+            background: rgba(139, 92, 246, 0.15);
+            color: #a78bfa;
+            border: 1px solid rgba(139, 92, 246, 0.25);
+        }
+
+        .badge-pro {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
+            border: 1px solid rgba(102, 126, 234, 0.4);
+            color: #a78bfa;
+        }
+
+        .badge-starter {
+            background: rgba(59, 130, 246, 0.15);
+            color: #3b82f6;
+            border: 1px solid rgba(59, 130, 246, 0.25);
+        }
+
+        .badge-unlimited {
+            background: rgba(236, 72, 153, 0.15);
+            color: #ec4899;
+            border: 1px solid rgba(236, 72, 153, 0.25);
+        }
+
+        .badge-agency {
+            background: linear-gradient(135deg, rgba(251, 191, 36, 0.2) 0%, rgba(245, 158, 11, 0.2) 100%);
+            border: 1px solid rgba(251, 191, 36, 0.4);
+            color: #fbbf24;
+        }
+
+        /* Modal */
+        .modal-backdrop {
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-content {
+            animation: modalSlideUp 0.3s ease-out;
+        }
+
+        @keyframes modalSlideUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px) scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* Recommendations styling */
+        .recommendations-content h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #fff;
+            margin: 2.5rem 0 1.25rem 0;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid rgba(102, 126, 234, 0.3);
+        }
+
+        .recommendations-content h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #667eea;
+            margin: 2rem 0 1rem 0;
+        }
+
+        .recommendations-content h3 {
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: #a78bfa;
+            margin: 1.25rem 0 0.75rem 0;
+        }
+
+        .recommendations-content p {
+            color: #d1d5db;
+            line-height: 1.8;
+            margin: 0.75rem 0;
+        }
+
+        .recommendations-content ul {
+            list-style: none;
+            padding-left: 0;
+            margin: 1rem 0;
+        }
+
+        .recommendations-content li {
+            color: #d1d5db;
+            padding: 0.75rem 0 0.75rem 2rem;
+            position: relative;
+            line-height: 1.7;
+        }
+
+        .recommendations-content li::before {
+            content: "▸";
+            color: #667eea;
+            font-weight: bold;
+            position: absolute;
+            left: 0.5rem;
+            font-size: 1.1em;
+        }
+
+        .recommendations-content strong {
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: .6;
+            }
+        }
+
+        /* Copy button feedback */
+        .copy-success {
+            background: rgba(16, 185, 129, 0.2) !important;
+            border-color: rgba(16, 185, 129, 0.4) !important;
+        }
+
+        /* Progress bar */
+        .progress-bar {
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 9999px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.3s ease;
+        }
+
+        /* Campaign card hover */
+        .campaign-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .campaign-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(102, 126, 234, 0.5);
+        }
+
+        @media (max-width: 640px) {
+            body {
+                font-size: 15px;
+            }
+
+            h1 {
+                font-size: 2rem !important;
+            }
+
+            h2 {
+                font-size: 1.5rem !important;
+            }
+        }
+    </style>
+</head>
+
+<body class="px-4 py-8 sm:px-6 lg:px-8">
+    <div class="content-wrapper max-w-6xl mx-auto" x-data="emailGenerator()" x-cloak>
+
+        <!-- Hero Section -->
+        <div class="text-center mb-20 py-16 fade-in">
+            <div class="mb-6 flex flex-wrap justify-center gap-3">
+                <span class="badge badge-success text-sm">✨ Trusted by 500+ Sales Professionals</span>
+                <template x-if="tierInfo && tierInfo.tier">
+                    <span class="badge text-sm"
+                        :class="{
+                            'badge-starter': tierInfo.tier === 'starter',
+                            'badge-pro': tierInfo.tier === 'professional',
+                            'badge-unlimited': tierInfo.tier === 'unlimited',
+                            'badge-agency': tierInfo.tier === 'agency'
+                        }"
+                        x-text="`🎯 ${tierInfo.name} Plan`"></span>
+                </template>
+            </div>
+            <h1 class="text-6xl sm:text-7xl font-black mb-6 leading-tight tracking-tight">
+                <span class="gradient-text">5 Cold Emails</span><br>
+                <span class="text-white">In 90 Seconds</span>
+            </h1>
+            <p class="text-gray-300 text-xl sm:text-2xl mb-4 max-w-3xl mx-auto font-medium">
+                AI-powered campaign builder with strategic analysis, email variations, follow-ups, and conversion
+                tactics.
+            </p>
+            <p class="text-purple-400 text-base mb-12 max-w-2xl mx-auto">
+                Stop wasting hours on email copy. Generate a complete B2B campaign faster than brewing coffee. ☕
+            </p>
+
+            <!-- Social Proof -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-8 mb-12 max-w-3xl mx-auto">
+                <div class="glass-strong rounded-2xl p-6">
+                    <div class="text-3xl font-bold gradient-text mb-1">500+</div>
+                    <div class="text-sm text-gray-400">Active Users</div>
+                </div>
+                <div class="glass-strong rounded-2xl p-6">
+                    <div class="text-3xl font-bold gradient-text mb-1">10K+</div>
+                    <div class="text-sm text-gray-400">Campaigns</div>
+                </div>
+                <div class="glass-strong rounded-2xl p-6">
+                    <div class="text-3xl font-bold gradient-text mb-1">90s</div>
+                    <div class="text-sm text-gray-400">Avg Time</div>
+                </div>
+                <div class="glass-strong rounded-2xl p-6">
+                    <div class="text-3xl font-bold gradient-text mb-1">$2.5M+</div>
+                    <div class="text-sm text-gray-400">Pipeline</div>
+                </div>
+            </div>
+
+            <!-- CTA Buttons -->
+            <div class="flex flex-col sm:flex-row gap-4 justify-center items-center mb-10">
+                <button @click="showDemoModal = true"
+                    class="px-10 py-5 rounded-2xl font-bold text-white btn-secondary text-lg hover:scale-105 transition-transform shadow-lg">
+                    🎯 Try Free Demo
+                </button>
+                <a href="https://blazestudiox.gumroad.com/l/coldemailgeneratorpro" target="_blank"
+                    class="px-10 py-5 rounded-2xl font-bold text-white btn-primary text-lg inline-block">
+                    🚀 Get Full Access - Starting at $29
+                </a>
+            </div>
+
+            <!-- Trust Badges -->
+            <div class="flex flex-wrap justify-center gap-6 text-sm text-gray-400 mb-8">
+                <div class="flex items-center gap-2">
+                    <svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd"
+                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                            clip-rule="evenodd"></path>
+                    </svg>
+                    <span>No Subscription</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd"
+                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                            clip-rule="evenodd"></path>
+                    </svg>
+                    <span>Multiple Tiers</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd"
+                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                            clip-rule="evenodd"></path>
+                    </svg>
+                    <span>Export DOCX & PDF</span>
+                </div>
+            </div>
+
+            <!-- Usage Badge -->
+            <div x-show="tierInfo" class="inline-flex flex-wrap items-center justify-center gap-3">
+                <template x-if="tierInfo && !tierInfo.is_expired">
+                    <div class="glass-strong rounded-xl px-6 py-3">
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="text-sm text-gray-400">Campaigns Used:</span>
+                            <span class="font-bold text-white" x-text="usageStats ? usageStats.uses : 0"></span>
+                            <span class="text-gray-500">/</span>
+                            <span class="font-bold text-purple-400"
+                                x-text="tierInfo.is_unlimited ? '∞' : tierInfo.generation_limit"></span>
+                        </div>
+                        <div class="progress-bar" x-show="!tierInfo.is_unlimited">
+                            <div class="progress-fill"
+                                :style="`width: ${Math.min(100, (usageStats.uses / tierInfo.generation_limit) * 100)}%`">
+                            </div>
+                        </div>
+                    </div>
+                </template>
+                <template x-if="savedCampaignsCount > 0">
+                    <button @click="showCampaignHistory = true"
+                        class="glass-strong rounded-xl px-6 py-3 hover:bg-white/10 transition-colors">
+                        <div class="flex items-center gap-2">
+                            <span class="text-2xl">💾</span>
+                            <span class="text-sm text-gray-400">Saved:</span>
+                            <span class="font-bold text-white" x-text="savedCampaignsCount"></span>
+                        </div>
+                    </button>
+                </template>
+            </div>
+        </div>
+
+        <!-- Demo Modal -->
+        <div x-show="showDemoModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop"
+            @click.self="showDemoModal = false" x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+            x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0">
+            <div class="glass-strong rounded-3xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto modal-content">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-3xl font-bold gradient-text">🎯 Try Free Demo</h2>
+                    <button @click="showDemoModal = false" class="text-gray-400 hover:text-white text-2xl">
+                        ×
+                    </button>
+                </div>
+
+                <template x-if="demoLimitReached">
+                    <div class="glass rounded-2xl p-6 border-2 border-yellow-500/30 mb-6">
+                        <div class="flex items-start gap-3">
+                            <span class="text-2xl">⏰</span>
+                            <div>
+                                <p class="font-bold text-yellow-400 mb-2">Demo Limit Reached</p>
+                                <p class="text-sm text-gray-300 mb-3" x-text="demoLimitMessage"></p>
+                                <a href="https://blazestudiox.gumroad.com/l/coldemailgeneratorpro" target="_blank"
+                                    class="inline-block px-6 py-3 rounded-xl font-semibold text-white btn-primary text-sm">
+                                    Get Full Access - Starting at $29
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+
+                <p class="text-gray-300 mb-8">Fill in your target details to generate a sample campaign. See the quality
+                    before you buy!</p>
+
+                <div class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-300 mb-2">Company Name</label>
+                        <input type="text" x-model="demoFormData.company_name" placeholder="e.g., TechCorp Solutions"
+                            class="w-full px-4 py-3 rounded-xl" />
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-300 mb-2">Industry</label>
+                        <input type="text" x-model="demoFormData.industry" placeholder="e.g., SaaS"
+                            class="w-full px-4 py-3 rounded-xl" />
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-300 mb-2">What You're Selling</label>
+                        <textarea x-model="demoFormData.offer"
+                            placeholder="e.g., We help SaaS companies automate customer onboarding..."
+                            class="w-full px-4 py-3 rounded-xl resize-none" rows="3"></textarea>
+                    </div>
+
+                    <button @click="generateDemo()" :disabled="demoLoading || demoLimitReached"
+                        class="w-full px-6 py-4 rounded-xl font-bold text-white btn-primary text-lg">
+                        <span x-show="!demoLoading">Generate Demo Campaign</span>
+                        <span x-show="demoLoading" class="flex items-center justify-center gap-3">
+                            <div class="spinner"></div>
+                            Generating...
+                        </span>
+                    </button>
+                </div>
+
+                <p class="text-xs text-gray-500 mt-6 text-center">
+                    Limited to 3 demos per day. No credit card required.
+                </p>
+            </div>
+        </div>
+
+        <!-- Campaign History Modal -->
+        <div x-show="showCampaignHistory"
+            class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop"
+            @click.self="showCampaignHistory = false" x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+            x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0">
+            <div class="glass-strong rounded-3xl p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto modal-content">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-3xl font-bold gradient-text">💾 Saved Campaigns</h2>
+                    <button @click="showCampaignHistory = false" class="text-gray-400 hover:text-white text-2xl">
+                        ×
+                    </button>
+                </div>
+
+                <template x-if="loadingCampaigns">
+                    <div class="text-center py-12">
+                        <div class="spinner mx-auto mb-4"></div>
+                        <p class="text-gray-400">Loading campaigns...</p>
+                    </div>
+                </template>
+
+                <template x-if="!loadingCampaigns && savedCampaignsList.length === 0">
+                    <div class="text-center py-12">
+                        <span class="text-6xl mb-4 block">📭</span>
+                        <p class="text-gray-400">No saved campaigns yet.</p>
+                        <p class="text-sm text-gray-500 mt-2">Generate and save your first campaign!</p>
+                    </div>
+                </template>
+
+                <div class="space-y-4">
+                    <template x-for="campaign in savedCampaignsList" :key="campaign.id">
+                        <div class="glass campaign-card rounded-2xl p-6 border border-white/10">
+                            <div class="flex items-start justify-between mb-4">
+                                <div class="flex-1">
+                                    <h3 class="text-xl font-bold text-white mb-2" x-text="campaign.company_name"></h3>
+                                    <p class="text-sm text-gray-400" x-text="campaign.industry"></p>
+                                    <p class="text-xs text-gray-500 mt-2"
+                                        x-text="'Created: ' + new Date(campaign.created_at).toLocaleDateString()"></p>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button @click="loadCampaignById(campaign.id)"
+                                        class="px-4 py-2 rounded-xl text-sm font-semibold btn-secondary">
+                                        Load
+                                    </button>
+                                    <button @click="deleteCampaignById(campaign.id)"
+                                        class="px-4 py-2 rounded-xl text-sm font-semibold btn-danger">
+                                        Delete
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+
+                <div class="mt-6 text-center">
+                    <button @click="loadMoreCampaigns()"
+                        x-show="savedCampaignsList.length < totalSavedCampaigns && !loadingCampaigns"
+                        class="px-6 py-3 rounded-xl font-semibold btn-secondary text-sm">
+                        Load More
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Demo Result -->
+        <div x-show="demoResult" class="glass-strong rounded-3xl p-8 mb-12 border-2 border-purple-500/30 slide-up">
+            <div class="flex items-center justify-between mb-8">
+                <h2 class="text-3xl font-bold gradient-text">🎉 Demo Result</h2>
+                <span class="badge badge-demo">FREE PREVIEW</span>
+            </div>
+
+            <!-- Demo Pain Points -->
+            <template x-if="demoResult?.analysis?.strategic_brief?.top_3_pain_points">
+                <div class="mb-8">
+                    <h3 class="text-xl font-bold text-purple-400 mb-4">🎯 Top Pain Points (Preview)</h3>
+                    <div class="space-y-4">
+                        <template x-for="pain in demoResult.analysis.strategic_brief.top_3_pain_points"
+                            :key="pain.pain_point">
+                            <div class="glass rounded-2xl p-6 border-l-4 border-purple-500">
+                                <p class="font-bold text-white mb-3 text-lg" x-text="pain.pain_point || pain"></p>
+                                <p class="text-gray-400 leading-relaxed"
+                                    x-text="pain.description || pain.why_it_works || ''"></p>
+                            </div>
+                        </template>
+                    </div>
+                    <p class="text-sm text-purple-400 mt-4 italic" x-text="demoResult.analysis.strategic_brief.note">
+                    </p>
+                </div>
+            </template>
+
+            <!-- Demo Email -->
+            <template x-if="demoResult?.demo_email">
+                <div class="mb-8">
+                    <h3 class="text-xl font-bold text-purple-400 mb-4">📧 Sample Email (1 of 5)</h3>
+                    <div class="glass rounded-2xl p-8">
+                        <div class="mb-6">
+                            <p class="text-xs text-gray-500 mb-2 uppercase tracking-wide">Subject Line</p>
+                            <p class="text-lg font-semibold text-white" x-text="demoResult.demo_email.subject"></p>
+                        </div>
+                        <div class="glass-strong rounded-xl p-6">
+                            <pre class="text-sm text-gray-200 whitespace-pre-wrap font-sans leading-relaxed"
+                                x-text="demoResult.demo_email.email"></pre>
+                        </div>
+                        <p class="text-sm text-purple-400 mt-4 italic" x-text="demoResult.demo_email.note"></p>
+                    </div>
+                </div>
+            </template>
+
+            <!-- Locked Features -->
+            <div class="glass-strong rounded-2xl p-8 border-2 border-purple-500/30">
+                <h3 class="text-2xl font-bold text-white mb-6">🔒 Unlock Full Campaign</h3>
+                <div class="grid sm:grid-cols-2 gap-4 mb-8">
+                    <div class="flex items-start gap-3">
+                        <span class="text-2xl">🔒</span>
+                        <div>
+                            <p class="font-semibold text-white mb-1">4 More Email Approaches</p>
+                            <p class="text-sm text-gray-400">Authority, curiosity, social proof, direct value</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <span class="text-2xl">🔒</span>
+                        <div>
+                            <p class="font-semibold text-white mb-1">3-Email Follow-Up Sequence</p>
+                            <p class="text-sm text-gray-400">Days 3, 5, and 7 with strategic timing</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <span class="text-2xl">🔒</span>
+                        <div>
+                            <p class="font-semibold text-white mb-1">Strategic Recommendations</p>
+                            <p class="text-sm text-gray-400">Send times, A/B tests, personalization tactics</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <span class="text-2xl">🔒</span>
+                        <div>
+                            <p class="font-semibold text-white mb-1">Export & Save</p>
+                            <p class="text-sm text-gray-400">DOCX, PDF, and cloud storage</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tier Options -->
+                <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    <div class="glass rounded-xl p-4 border border-blue-500/30">
+                        <div class="text-lg font-bold text-blue-400 mb-2">Starter</div>
+                        <div class="text-2xl font-black text-white mb-2">$29</div>
+                        <div class="text-xs text-gray-400 mb-3">10 campaigns • 7 days</div>
+                        <a href="https://blazestudiox.gumroad.com/l/coldemailgeneratorpro?tier=starter" target="_blank"
+                            class="block w-full text-center px-4 py-2 rounded-lg bg-blue-500/20 text-blue-400 font-semibold text-sm hover:bg-blue-500/30">
+                            Get Started
+                        </a>
+                    </div>
+                    <div class="glass rounded-xl p-4 border-2 border-purple-500/50">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="text-lg font-bold text-purple-400">Pro</div>
+                            <span class="badge badge-pro text-xs">Popular</span>
+                        </div>
+                        <div class="text-2xl font-black text-white mb-2">$49</div>
+                        <div class="text-xs text-gray-400 mb-3">50 campaigns • 30 days</div>
+                        <a href="https://blazestudiox.gumroad.com/l/coldemailgeneratorpro" target="_blank"
+                            class="block w-full text-center px-4 py-2 rounded-lg btn-primary font-semibold text-sm">
+                            Get Pro
+                        </a>
+                    </div>
+                    <div class="glass rounded-xl p-4 border border-pink-500/30">
+                        <div class="text-lg font-bold text-pink-400 mb-2">Unlimited</div>
+                        <div class="text-2xl font-black text-white mb-2">$99</div>
+                        <div class="text-xs text-gray-400 mb-3">Unlimited • 90 days</div>
+                        <a href="https://blazestudiox.gumroad.com/l/coldemailgeneratorpro?tier=unlimited"
+                            target="_blank"
+                            class="block w-full text-center px-4 py-2 rounded-lg bg-pink-500/20 text-pink-400 font-semibold text-sm hover:bg-pink-500/30">
+                            Go Unlimited
+                        </a>
+                    </div>
+                    <div class="glass rounded-xl p-4 border border-yellow-500/30">
+                        <div class="text-lg font-bold text-yellow-400 mb-2">Agency</div>
+                        <div class="text-2xl font-black text-white mb-2">$199</div>
+                        <div class="text-xs text-gray-400 mb-3">Unlimited • Lifetime</div>
+                        <a href="https://blazestudiox.gumroad.com/l/coldemailgeneratorpro?tier=agency" target="_blank"
+                            class="block w-full text-center px-4 py-2 rounded-lg bg-yellow-500/20 text-yellow-400 font-semibold text-sm hover:bg-yellow-500/30">
+                            Get Agency
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center mt-8">
+                <button @click="demoResult = null; showDemoModal = false"
+                    class="text-gray-400 hover:text-white transition-colors font-medium">
+                    ← Start over
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Form -->
+        <div x-show="!demoResult" class="glass-strong rounded-3xl p-8 sm:p-12 mb-12 fade-in">
+            <h2 class="text-3xl font-bold mb-8 text-center">Generate Your Campaign</h2>
+
+            <!-- License Key -->
+            <div class="mb-10">
+                <label class="block text-sm font-bold text-gray-300 mb-3 uppercase tracking-wide">License Key</label>
+                <input type="password" x-model="licenseKey" @input="saveLicenseKey()"
+                    placeholder="XXXXXX-XXXXXXXX-XXXXXXXX-XXXXXXXX"
+                    class="w-full px-5 py-4 rounded-xl text-base font-mono"
+                    :class="licenseKey && licenseKey.length > 10 ? 'border-green-500 border-2' : ''" />
+                <p class="text-sm text-gray-400 mt-3">
+                    Don't have one? <a href="https://blazestudiox.gumroad.com/l/coldemailgeneratorpro" target="_blank"
+                        class="text-purple-400 hover:text-purple-300 font-semibold">Purchase here - Starting at $29</a>
+                </p>
+            </div>
+
+            <!-- Tier Upgrade Notice -->
+            <template x-if="tierLimitReached">
+                <div class="glass rounded-2xl p-6 border-2 border-yellow-500/30 mb-8">
+                    <div class="flex items-start gap-3 mb-4">
+                        <span class="text-2xl">⚠️</span>
+                        <div class="flex-1">
+                            <p class="font-bold text-yellow-400 mb-2">Tier Limit Reached</p>
+                            <p class="text-sm text-gray-300 mb-4" x-text="tierLimitMessage"></p>
+                        </div>
+                    </div>
+                    <template x-if="availableUpgrades && availableUpgrades.length > 0">
+                        <div>
+                            <p class="text-sm font-semibold text-gray-300 mb-3">Available Upgrades:</p>
+                            <div class="grid sm:grid-cols-3 gap-3">
+                                <template x-for="upgrade in availableUpgrades" :key="upgrade.tier">
+                                    <div class="glass-strong rounded-xl p-4">
+                                        <div class="text-sm font-bold text-purple-400 mb-1" x-text="upgrade.name"></div>
+                                        <div class="text-xl font-black text-white mb-2"
+                                            x-text="`$${upgrade.price}`"></div>
+                                        <div class="text-xs text-gray-400 mb-3">
+                                            <span
+                                                x-text="upgrade.generation_limit === -1 ? 'Unlimited' : upgrade.generation_limit"></span>
+                                            campaigns
+                                        </div>
+                                        <a :href="`https://blazestudiox.gumroad.com/l/coldemailgeneratorpro?tier=${upgrade.tier}`"
+                                            target="_blank"
+                                            class="block w-full text-center px-3 py-2 rounded-lg btn-primary font-semibold text-xs">
+                                            Upgrade Now
+                                        </a>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </template>
+
+            <!-- Quick Actions -->
+            <div class="mb-10 flex gap-3 justify-center flex-wrap">
+                <button @click="quickFill()" class="btn-secondary px-6 py-3 rounded-xl text-sm font-semibold">
+                    ⚡ Quick Fill Example
+                </button>
+                <template x-if="savedCampaignsCount > 0">
+                    <button @click="showCampaignHistory = true"
+                        class="btn-success px-6 py-3 rounded-xl text-sm font-semibold">
+                        💾 My Campaigns (<span x-text="savedCampaignsCount"></span>)
+                    </button>
+                </template>
+            </div>
+
+            <!-- Form Inputs -->
+            <div class="space-y-6">
+                <div>
+                    <label class="block text-sm font-bold text-gray-300 mb-3 uppercase tracking-wide">Company Name
+                        *</label>
+                    <input type="text" x-model="formData.company_name" placeholder="e.g., TechCorp Solutions"
+                        class="w-full px-5 py-4 rounded-xl text-base" required>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-bold text-gray-300 mb-3 uppercase tracking-wide">Industry *</label>
+                    <input type="text" x-model="formData.industry" placeholder="e.g., SaaS, E-commerce, FinTech"
+                        class="w-full px-5 py-4 rounded-xl text-base" required>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-bold text-gray-300 mb-3 uppercase tracking-wide">Company
+                        Size</label>
+                    <select x-model="formData.company_size" class="w-full px-5 py-4 rounded-xl text-base">
+                        <option value="unknown">Unknown</option>
+                        <option value="1-10">1-10 employees (Startup)</option>
+                        <option value="11-50">11-50 employees (Small)</option>
+                        <option value="51-200">51-200 employees (Medium)</option>
+                        <option value="201-500">201-500 employees (Large)</option>
+                        <option value="500+">500+ employees (Enterprise)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-bold text-gray-300 mb-3 uppercase tracking-wide">What You're
+                        Selling
+                        *</label>
+                    <textarea x-model="formData.offer"
+                        placeholder="Describe your offer with specific outcomes and benefits..."
+                        class="w-full px-5 py-4 rounded-xl resize-none text-base leading-relaxed" rows="4"
+                        required></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-bold text-gray-300 mb-3 uppercase tracking-wide">Email
+                        Style</label>
+                    <select x-model="formData.style" class="w-full px-5 py-4 rounded-xl text-base">
+                        <option value="professional">Professional - Polished & consultative</option>
+                        <option value="casual">Casual - Friendly & conversational</option>
+                        <option value="bold">Bold - Direct & confident</option>
+                    </select>
+                </div>
+
+                <!-- AI Model Selector -->
+                <div>
+                    <label class="block text-sm font-bold text-gray-300 mb-3 uppercase tracking-wide">AI Model</label>
+                    <select x-model="formData.model_provider" class="w-full px-5 py-4 rounded-xl text-base">
+                        <option value="claude">Claude Sonnet 4.5 (Recommended)</option>
+                        <option value="openai">GPT-4 by OpenAI</option>
+                    </select>
+                    <p class="text-xs text-gray-500 mt-2">Choose your preferred AI model for generation</p>
+                </div>
+
+                <!-- Optional: User API Key (if needed) -->
+                <template x-if="usageStats && usageStats.needs_own_key">
+                    <div class="glass-strong rounded-2xl p-6 border-2 border-yellow-500/30">
+                        <label class="block text-sm font-bold text-yellow-400 mb-3 uppercase tracking-wide">Your
+                            <span x-text="formData.model_provider === 'openai' ? 'OpenAI' : 'Claude'"></span> API
+                            Key (Required)</label>
+                        <input type="password" x-model="formData.user_api_key"
+                            :placeholder="formData.model_provider === 'openai' ? 'sk-proj-...' : 'sk-ant-api03-...'"
+                            class="w-full px-5 py-4 rounded-xl border-yellow-500 text-base font-mono" />
+                        <p class="text-sm text-gray-400 mt-3">
+                            Free uses exhausted. Get your key at
+                            <a :href="formData.model_provider === 'openai' ? 'https://platform.openai.com' : 'https://console.anthropic.com'"
+                                target="_blank" class="text-purple-400 font-semibold"
+                                x-text="formData.model_provider === 'openai' ? 'platform.openai.com' : 'console.anthropic.com'"></a>
+                        </p>
+                    </div>
+                </template>
+            </div>
+
+            <!-- Generate Button -->
+            <button @click="generate()" :disabled="loading || !canGenerate()"
+                class="w-full mt-10 px-8 py-5 rounded-2xl font-bold text-white btn-primary text-xl">
+                <span x-show="!loading">🚀 Generate Full Campaign</span>
+                <span x-show="loading" class="flex items-center justify-center gap-4">
+                    <div class="spinner"></div>
+                    <span x-text="loadingMessage"></span>
+                </span>
+            </button>
+
+            <p class="text-xs text-gray-500 mt-4 text-center">
+                Generation takes 60-120 seconds. Please be patient while AI crafts your campaigns.
+            </p>
+        </div>
+
+        <!-- Error Message -->
+        <div x-show="error" class="glass-strong rounded-2xl p-6 mb-8 border-2 border-red-500/50 bg-red-500/10 slide-up">
+            <div class="flex items-start gap-3">
+                <span class="text-2xl">⚠️</span>
+                <div>
+                    <p class="font-bold text-red-400 mb-1">Error</p>
+                    <p class="text-red-300 text-sm" x-text="error"></p>
+                    <button @click="error = null" class="text-xs text-red-400 hover:text-red-300 mt-2 underline">
+                        Dismiss
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results -->
+        <div x-show="result" class="space-y-8 slide-up">
+
+            <!-- Export Actions -->
+            <div class="glass-strong rounded-2xl p-8 sticky top-4 z-10 border-2 border-green-500/30">
+                <div class="flex flex-wrap gap-4 justify-between items-center">
+                    <div>
+                        <h2 class="text-2xl font-bold gradient-text mb-2">✨ Campaign Generated!</h2>
+                        <p class="text-gray-400">Your complete cold email arsenal is ready</p>
+                    </div>
+                    <div class="flex flex-wrap gap-3">
+                        <button @click="exportCampaign('docx')" :disabled="exportLoading"
+                            class="btn-success px-5 py-3 rounded-xl text-sm font-semibold flex items-center gap-2">
+                            <span x-show="!exportLoading || exportFormat !== 'docx'">📄 DOCX</span>
+                            <div x-show="exportLoading && exportFormat === 'docx'" class="spinner w-4 h-4"></div>
+                        </button>
+                        <button @click="exportCampaign('pdf')" :disabled="exportLoading"
+                            class="btn-success px-5 py-3 rounded-xl text-sm font-semibold flex items-center gap-2">
+                            <span x-show="!exportLoading || exportFormat !== 'pdf'">📑 PDF</span>
+                            <div x-show="exportLoading && exportFormat === 'pdf'" class="spinner w-4 h-4"></div>
+                        </button>
+                        <button @click="saveCampaignToCloud()" :disabled="savingCampaign"
+                            class="btn-secondary px-5 py-3 rounded-xl text-sm font-semibold flex items-center gap-2">
+                            <span x-show="!savingCampaign">💾 Save</span>
+                            <div x-show="savingCampaign" class="spinner w-4 h-4"></div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Strategic Analysis -->
+            <div class="glass rounded-3xl p-8">
+                <h2 class="text-3xl font-bold mb-6 gradient-text">📊 Strategic Analysis</h2>
+
+                <template x-if="result?.analysis">
+                    <div class="space-y-8">
+                        <!-- Top Pain Points -->
+                        <template x-if="result.analysis.strategic_brief?.top_3_pain_points?.length">
+                            <div>
+                                <h3 class="text-xl font-bold text-purple-400 mb-4">🎯 Top 3 Pain Points</h3>
+                                <div class="space-y-4">
+                                    <template x-for="(pain, index) in result.analysis.strategic_brief.top_3_pain_points"
+                                        :key="index">
+                                        <div class="glass-strong rounded-2xl p-6 border-l-4 border-red-500">
+                                            <p class="font-bold text-white mb-3 text-lg"
+                                                x-text="pain.pain_point || pain || 'Pain Point'"></p>
+                                            <p class="text-gray-400 leading-relaxed"
+                                                x-text="pain.description || pain.why_it_works || ''">
+                                            </p>
+                                            <template x-if="pain.urgency">
+                                                <span
+                                                    class="inline-block mt-3 px-3 py-1 text-xs rounded-full bg-red-500/20 text-red-400 font-semibold"
+                                                    x-text="'Urgency: ' + pain.urgency"></span>
+                                            </template>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+
+                        <!-- Key Objections -->
+                        <template x-if="result.analysis.strategic_brief?.key_objections?.length">
+                            <div>
+                                <h3 class="text-xl font-bold text-purple-400 mb-4">🛡️ Key Objections & Rebuttals</h3>
+                                <div class="space-y-3">
+                                    <template x-for="(obj, index) in result.analysis.strategic_brief.key_objections"
+                                        :key="index">
+                                        <div class="glass-strong rounded-xl p-5">
+                                            <template x-if="obj.objection || typeof obj === 'string'">
+                                                <p class="font-bold text-yellow-400 mb-2 text-base"
+                                                    x-html="`&quot;${obj.objection || obj}&quot;`"></p>
+                                            </template>
+                                            <template x-if="obj.underlying_concern">
+                                                <p class="text-sm text-gray-500 mb-2" x-text="obj.underlying_concern">
+                                                </p>
+                                            </template>
+                                            <template x-if="obj.reframe_strategy">
+                                                <p class="text-sm text-gray-300 leading-relaxed"
+                                                    x-text="'→ ' + obj.reframe_strategy"></p>
+                                            </template>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+
+                        <!-- Value Propositions -->
+                        <template x-if="result.analysis.strategic_brief?.resonant_value_propositions?.length">
+                            <div>
+                                <h3 class="text-xl font-bold text-purple-400 mb-4">💎 Resonant Value Props</h3>
+                                <div class="space-y-4">
+                                    <template
+                                        x-for="(vp, index) in result.analysis.strategic_brief.resonant_value_propositions"
+                                        :key="index">
+                                        <div class="glass-strong rounded-2xl p-6 border-l-4 border-green-500">
+                                            <template x-if="vp.value_prop || typeof vp === 'string'">
+                                                <p class="font-bold text-green-400 mb-3 text-lg"
+                                                    x-text="vp.value_prop || vp">
+                                                </p>
+                                            </template>
+                                            <template x-if="vp.why_it_works">
+                                                <p class="text-gray-400 leading-relaxed" x-text="vp.why_it_works"></p>
+                                            </template>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+
+                        <!-- Hooks -->
+                        <template x-if="result.analysis.strategic_brief?.hooks_and_pattern_interrupts?.length">
+                            <div>
+                                <h3 class="text-xl font-bold text-purple-400 mb-4">🪝 Hooks & Pattern Interrupts</h3>
+                                <div class="space-y-3">
+                                    <template
+                                        x-for="(hook, index) in result.analysis.strategic_brief.hooks_and_pattern_interrupts"
+                                        :key="index">
+                                        <div class="glass-strong rounded-xl p-4">
+                                            <template x-if="hook.hook || typeof hook === 'string'">
+                                                <p class="font-semibold text-cyan-400 mb-2"
+                                                    x-text="hook.hook || hook"></p>
+                                            </template>
+                                            <template x-if="hook.type || hook.why_it_works">
+                                                <p class="text-sm text-gray-500">
+                                                    <span x-show="hook.type" x-text="hook.type"></span>
+                                                    <span x-show="hook.type && hook.why_it_works"> • </span>
+                                                    <span x-show="hook.why_it_works" x-text="hook.why_it_works"></span>
+                                                </p>
+                                            </template>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+            </div>
+
+            <!-- Cold Emails -->
+            <div class="glass rounded-3xl p-8">
+                <h2 class="text-3xl font-bold mb-6 gradient-text">📧 Cold Emails (5 Approaches)</h2>
+
+                <template x-if="result?.cold_emails">
+                    <div class="space-y-6">
+                        <template x-for="(email, approach) in result.cold_emails" :key="approach">
+                            <div class="glass-strong rounded-2xl p-8">
+                                <div class="flex items-center justify-between mb-6">
+                                    <h3 class="text-xl font-bold text-purple-400 uppercase"
+                                        x-text="approach.replace(/_/g, ' ')"></h3>
+                                    <button @click="copyToClipboard(email.email, approach)"
+                                        :class="copiedId === approach ? 'copy-success' : ''"
+                                        class="btn-secondary px-4 py-2 rounded-xl text-sm font-semibold transition-all">
+                                        <span x-text="copiedId === approach ? '✓ Copied!' : '📋 Copy'"></span>
+                                    </button>
+                                </div>
+
+                                <div class="mb-6">
+                                    <p class="text-xs text-gray-500 mb-2 uppercase tracking-wide">Subject Line</p>
+                                    <p class="text-base font-semibold text-white" x-text="email.subject"></p>
+                                </div>
+
+                                <template x-if="email.subject_variants && email.subject_variants.length">
+                                    <div class="mb-6">
+                                        <p class="text-xs text-gray-500 mb-2 uppercase tracking-wide">Alternative
+                                            Subjects
+                                        </p>
+                                        <template x-for="variant in email.subject_variants">
+                                            <p class="text-sm text-gray-400 mb-1" x-text="'• ' + variant"></p>
+                                        </template>
+                                    </div>
+                                </template>
+
+                                <div class="glass rounded-xl p-6">
+                                    <pre class="text-sm text-gray-200 whitespace-pre-wrap font-sans leading-relaxed"
+                                        x-text="email.email"></pre>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+            </div>
+
+            <!-- Follow-up Sequence -->
+            <div class="glass rounded-3xl p-8">
+                <h2 class="text-3xl font-bold mb-6 gradient-text">📅 Follow-Up Sequence</h2>
+
+                <template x-if="result?.followup_sequence">
+                    <div class="space-y-6">
+                        <template x-for="(followup, index) in result.followup_sequence" :key="index">
+                            <div class="glass-strong rounded-2xl p-8">
+                                <div class="flex items-center justify-between mb-6">
+                                    <div class="flex items-center gap-3">
+                                        <span class="text-2xl">📆</span>
+                                        <h3 class="text-lg font-bold text-gray-300">
+                                            Day <span x-text="followup.day"></span>
+                                        </h3>
+                                    </div>
+                                    <button @click="copyToClipboard(followup.body, `followup-${index}`)"
+                                        :class="copiedId === `followup-${index}` ? 'copy-success' : ''"
+                                        class="btn-secondary px-4 py-2 rounded-xl text-sm font-semibold transition-all">
+                                        <span x-text="copiedId === `followup-${index}` ? '✓ Copied!' : '📋 Copy'"></span>
+                                    </button>
+                                </div>
+
+                                <div class="mb-6">
+                                    <p class="text-xs text-gray-500 mb-2 uppercase tracking-wide">Subject</p>
+                                    <p class="text-base font-semibold text-white" x-text="followup.subject"></p>
+                                </div>
+
+                                <div class="glass rounded-xl p-6">
+                                    <pre class="text-sm text-gray-200 whitespace-pre-wrap font-sans leading-relaxed"
+                                        x-text="followup.body"></pre>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+            </div>
+
+            <!-- Strategic Recommendations -->
+            <div class="glass rounded-3xl p-8">
+                <h2 class="text-3xl font-bold mb-6 gradient-text">💡 Strategic Recommendations</h2>
+                <div class="recommendations-content"
+                    x-html="formatRecommendations(result?.recommendations?.strategic_recommendations)"></div>
+            </div>
+
+            <!-- Footer CTA -->
+            <div class="text-center py-12">
+                <button @click="reset()"
+                    class="px-10 py-4 rounded-2xl bg-white/5 hover:bg-white/10 transition-all font-bold text-lg">
+                    🔄 Generate Another Campaign
+                </button>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center text-gray-500 text-sm mt-20 pb-8">
+            <p>© 2024 Cold Email Generator Pro. All rights reserved.</p>
+            <p class="mt-2">Powered by Claude Sonnet 4.5 & GPT-4</p>
+        </div>
+    </div>
+
+    <script>
+        function emailGenerator() {
+            return {
+                licenseKey: localStorage.getItem('license_key') || '',
+                showDemoModal: false,
+                showCampaignHistory: false,
+                demoFormData: {
+                    company_name: '',
+                    industry: '',
+                    offer: '',
+                    style: 'professional'
+                },
+                formData: {
+                    company_name: '',
+                    industry: '',
+                    offer: '',
+                    style: 'professional',
+                    company_size: 'unknown',
+                    user_api_key: null,
+                    model_provider: 'claude'
+                },
+                loading: false,
+                loadingMessage: 'Generating...',
+                result: null,
+                error: null,
+                usageStats: null,
+                tierInfo: null,
+                tierLimitReached: false,
+                tierLimitMessage: '',
+                availableUpgrades: [],
+                demoResult: null,
+                demoLoading: false,
+                demoLimitReached: false,
+                demoLimitMessage: '',
+                exportLoading: false,
+                exportFormat: null,
+                savingCampaign: false,
+                copiedId: null,
+                savedCampaignsCount: 0,
+                savedCampaignsList: [],
+                totalSavedCampaigns: 0,
+                loadingCampaigns: false,
+                campaignOffset: 0,
+                apiUrl: 'https://awesome-tool-4n2p.onrender.com',
+
+                init() {
+                    if (this.licenseKey) {
+                        this.fetchUsage();
+                        this.fetchSavedCampaignsCount();
+                    }
+                },
+
+                quickFill() {
+                    this.formData = {
+                        company_name: 'TechCorp Solutions',
+                        industry: 'SaaS',
+                        offer: 'We help SaaS companies automate their customer onboarding with AI-powered workflows that reduce time-to-value by 50%',
+                        style: 'professional',
+                        company_size: '11-50',
+                        user_api_key: null,
+                        model_provider: 'claude'
+                    };
+                },
+
+                saveLicenseKey() {
+                    localStorage.setItem('license_key', this.licenseKey);
+                    if (this.licenseKey.length > 10) {
+                        this.fetchUsage();
+                        this.fetchSavedCampaignsCount();
+                    }
+                },
+
+                async fetchUsage() {
+                    try {
+                        const response = await fetch(`${this.apiUrl}/api/usage`, {
+                            headers: {
+                                'Authorization': `Bearer ${this.licenseKey}`
+                            }
+                        });
+                        const data = await response.json();
+                        if (data.success) {
+                            this.usageStats = data.usage;
+                            this.tierInfo = data.tier;
+                            this.tierLimitReached = data.tier_limit_reached || false;
+                            this.availableUpgrades = data.available_upgrades || [];
+
+                            if (this.tierLimitReached && this.tierInfo) {
+                                this.tierLimitMessage = `You've reached your ${this.tierInfo.name} plan limit (${this.usageStats.uses}/${this.tierInfo.generation_limit} campaigns). Upgrade to continue generating.`;
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Usage fetch error:', e);
+                    }
+                },
+
+                async fetchSavedCampaignsCount() {
+                    try {
+                        const response = await fetch(`${this.apiUrl}/api/campaigns?limit=1`, {
+                            headers: {
+                                'Authorization': `Bearer ${this.licenseKey}`
+                            }
+                        });
+                        const data = await response.json();
+                        if (data.success) {
+                            this.savedCampaignsCount = data.total || 0;
+                            this.totalSavedCampaigns = data.total || 0;
+                        }
+                    } catch (e) {
+                        console.error('Campaign count fetch error:', e);
+                    }
+                },
+
+                async loadSavedCampaigns() {
+                    this.loadingCampaigns = true;
+                    try {
+                        const response = await fetch(`${this.apiUrl}/api/campaigns?limit=10&offset=${this.campaignOffset}`, {
+                            headers: {
+                                'Authorization': `Bearer ${this.licenseKey}`
+                            }
+                        });
+                        const data = await response.json();
+                        if (data.success) {
+                            this.savedCampaignsList = data.campaigns || [];
+                            this.totalSavedCampaigns = data.total || 0;
+                            this.campaignOffset = 0;
+                        }
+                    } catch (e) {
+                        console.error('Load campaigns error:', e);
+                        this.error = 'Failed to load saved campaigns';
+                    } finally {
+                        this.loadingCampaigns = false;
+                    }
+                },
+
+                async loadMoreCampaigns() {
+                    this.campaignOffset += 10;
+                    this.loadingCampaigns = true;
+                    try {
+                        const response = await fetch(`${this.apiUrl}/api/campaigns?limit=10&offset=${this.campaignOffset}`, {
+                            headers: {
+                                'Authorization': `Bearer ${this.licenseKey}`
+                            }
+                        });
+                        const data = await response.json();
+                        if (data.success) {
+                            this.savedCampaignsList = [...this.savedCampaignsList, ...(data.campaigns || [])];
+                        }
+                    } catch (e) {
+                        console.error('Load more error:', e);
+                    } finally {
+                        this.loadingCampaigns = false;
+                    }
+                },
+
+                async loadCampaignById(campaignId) {
+                    try {
+                        const response = await fetch(`${this.apiUrl}/api/campaigns/${campaignId}`, {
+                            headers: {
+                                'Authorization': `Bearer ${this.licenseKey}`
+                            }
+                        });
+                        const data = await response.json();
+                        if (data.success && data.campaign) {
+                            this.result = data.campaign;
+                            this.showCampaignHistory = false;
+                            setTimeout(() => {
+                                window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+                            }, 100);
+                        }
+                    } catch (e) {
+                        console.error('Load campaign error:', e);
+                        this.error = 'Failed to load campaign';
+                    }
+                },
+
+                async deleteCampaignById(campaignId) {
+                    if (!confirm('Are you sure you want to delete this campaign?')) return;
+
+                    try {
+                        const response = await fetch(`${this.apiUrl}/api/campaigns/${campaignId}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'Authorization': `Bearer ${this.licenseKey}`
+                            }
+                        });
+                        const data = await response.json();
+                        if (data.success) {
+                            this.savedCampaignsList = this.savedCampaignsList.filter(c => c.id !== campaignId);
+                            this.savedCampaignsCount--;
+                            this.totalSavedCampaigns--;
+                        }
+                    } catch (e) {
+                        console.error('Delete campaign error:', e);
+                        this.error = 'Failed to delete campaign';
+                    }
+                },
+
+                canGenerate() {
+                    if (!this.licenseKey) return false;
+                    if (!this.formData.company_name || !this.formData.industry || !this.formData.offer) return false;
+                    if (this.tierLimitReached) return false;
+                    if (this.usageStats?.needs_own_key && !this.formData.user_api_key) return false;
+                    return true;
+                },
+
+                async generateDemo() {
+                    this.error = null;
+                    this.demoResult = null;
+                    this.demoLoading = true;
+                    this.demoLimitReached = false;
+
+                    try {
+                        const response = await fetch(`${this.apiUrl}/api/demo`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(this.demoFormData)
+                        });
+
+                        const data = await response.json();
+
+                        if (!response.ok) {
+                            if (response.status === 429) {
+                                this.demoLimitReached = true;
+                                this.demoLimitMessage = data.error || 'Demo limit reached. Please try again later.';
+                            }
+                            throw new Error(data.error || 'Demo generation failed');
+                        }
+
+                        this.demoResult = data.result;
+                        this.showDemoModal = false;
+
+                        setTimeout(() => {
+                            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+                        }, 100);
+
+                    } catch (e) {
+                        if (!this.demoLimitReached) {
+                            this.error = e.message;
+                            this.showDemoModal = false;
+                        }
+                    } finally {
+                        this.demoLoading = false;
+                    }
+                },
+
+                async generate() {
+                    this.error = null;
+                    this.result = null;
+                    this.loading = true;
+                    this.loadingMessage = 'Analyzing company...';
+
+                    try {
+                        setTimeout(() => {
+                            if (this.loading) this.loadingMessage = 'Generating 5 emails...';
+                        }, 15000);
+
+                        setTimeout(() => {
+                            if (this.loading) this.loadingMessage = 'Creating follow-ups...';
+                        }, 45000);
+
+                        setTimeout(() => {
+                            if (this.loading) this.loadingMessage = 'Finalizing recommendations...';
+                        }, 70000);
+
+                        const response = await fetch(`${this.apiUrl}/api/generate`, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${this.licenseKey}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(this.formData)
+                        });
+
+                        const data = await response.json();
+
+                        if (!response.ok) {
+                            throw new Error(data.error || 'Generation failed');
+                        }
+
+                        this.result = data.result;
+                        this.usageStats = data.usage;
+
+                        // Refresh tier info
+                        await this.fetchUsage();
+
+                        setTimeout(() => {
+                            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+                        }, 100);
+
+                    } catch (e) {
+                        this.error = e.message;
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    } finally {
+                        this.loading = false;
+                        this.loadingMessage = 'Generating...';
+                    }
+                },
+
+                async saveCampaignToCloud() {
+                    if (!this.result) return;
+
+                    this.savingCampaign = true;
+                    try {
+                        const response = await fetch(`${this.apiUrl}/api/campaigns`, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${this.licenseKey}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                campaign_data: this.result
+                            })
+                        });
+
+                        const data = await response.json();
+
+                        if (data.success) {
+                            alert('✅ Campaign saved successfully!');
+                            await this.fetchSavedCampaignsCount();
+                        } else {
+                            throw new Error(data.error || 'Save failed');
+                        }
+                    } catch (e) {
+                        this.error = `Failed to save campaign: ${e.message}`;
+                    } finally {
+                        this.savingCampaign = false;
+                    }
+                },
+
+                async exportCampaign(format) {
+                    if (!this.result) return;
+
+                    this.exportLoading = true;
+                    this.exportFormat = format;
+
+                    try {
+                        const response = await fetch(`${this.apiUrl}/api/export`, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${this.licenseKey}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                campaign_data: this.result,
+                                format: format
+                            })
+                        });
+
+                        if (!response.ok) {
+                            throw new Error('Export failed');
+                        }
+
+                        const blob = await response.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `campaign_${this.result.company.name.replace(/\s+/g, '_')}.${format}`;
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                        document.body.removeChild(a);
+
+                    } catch (e) {
+                        this.error = `Export failed: ${e.message}`;
+                    } finally {
+                        this.exportLoading = false;
+                        this.exportFormat = null;
+                    }
+                },
+
+                async copyToClipboard(text, id) {
+                    try {
+                        await navigator.clipboard.writeText(text);
+                        this.copiedId = id;
+                        setTimeout(() => {
+                            this.copiedId = null;
+                        }, 2000);
+                    } catch (e) {
+                        console.error('Copy failed:', e);
+                    }
+                },
+
+                formatRecommendations(text) {
+                    if (!text) return '';
+
+                    // Convert markdown-style formatting to HTML
+                    let html = text
+                        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                        .replace(/## (.*?)(\n|$)/g, '<h2>$1</h2>')
+                        .replace(/### (.*?)(\n|$)/g, '<h3>$1</h3>')
+                        .replace(/\n- (.*?)(\n|$)/g, '<li>$1</li>')
+                        .replace(/\n\n/g, '</p><p>')
+                        .replace(/\n/g, '<br>');
+
+                    return `<p>${html}</p>`;
+                },
+
+                reset() {
+                    this.result = null;
+                    this.error = null;
+                    this.formData = {
+                        company_name: '',
+                        industry: '',
+                        offer: '',
+                        style: 'professional',
+                        company_size: 'unknown',
+                        user_api_key: null,
+                        model_provider: 'claude'
+                    };
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            }
+        }
+
+        // Auto-open campaign history when modal is shown
+        document.addEventListener('alpine:init', () => {
+            Alpine.store('app', {
+                init() {
+                    // Any global initialization
+                }
+            });
+        });
+    </script>
+
+    <script>
+        // Global event listeners
+        document.addEventListener('DOMContentLoaded', function () {
+            // Add any additional initialization here
+            console.log('Cold Email Generator Pro - Ready! 🚀');
+        });
+    </script>
+</body>
+
+</html>
