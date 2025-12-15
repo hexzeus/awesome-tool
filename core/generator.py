@@ -43,23 +43,23 @@ class EmailGenerator:
     ) -> Dict:
         """
         Generate complete cold email campaign with optimized parallel execution
-        
+
         Performance: ~60-90 seconds (was 180-195s)
         - Stage 1: Analysis (15s)
         - Stage 2: 5 emails + variants in parallel (30s)
         - Stage 3: Followups + Metadata in parallel (20s)
         """
-        
+
         # Stage 1: Strategic Analysis (must run first)
         print("Stage 1: Analyzing company...")
         analysis = await self._analyze_company(
             company_name, industry, offer, company_size
         )
-        
+
         # Stage 2: Generate 5 emails with variants IN PARALLEL
         print("Stage 2: Generating 5 emails in parallel...")
         approaches = ["problem_aware", "authority", "curiosity", "social_proof", "direct_value"]
-        
+
         # Run all email generations in parallel
         email_tasks = [
             self._generate_email_with_variants(
@@ -67,10 +67,10 @@ class EmailGenerator:
             )
             for approach in approaches
         ]
-        
+
         email_results = await asyncio.gather(*email_tasks)
         emails = {approach: email_data for approach, email_data in zip(approaches, email_results)}
-        
+
         # Stage 3: Follow-ups and Metadata IN PARALLEL
         print("Stage 3: Generating followups and metadata in parallel...")
         followups_task = self._generate_followups(
@@ -78,13 +78,13 @@ class EmailGenerator:
             analysis,
             style
         )
-        
+
         all_emails_text = self._compile_emails_text(emails)
         metadata_task = self._generate_metadata(all_emails_text)
-        
+
         # Run in parallel
         followups, metadata = await asyncio.gather(followups_task, metadata_task)
-        
+
         # Compile final package
         return {
             "company": {
@@ -98,6 +98,99 @@ class EmailGenerator:
             "recommendations": metadata,
             "style": style
         }
+
+    async def generate_campaign_stream(
+        self,
+        company_name: str,
+        industry: str,
+        offer: str,
+        style: str = "professional",
+        company_size: str = "unknown"
+    ):
+        """
+        Generate campaign with progressive streaming - yields results as each stage completes
+
+        Yields JSON chunks:
+        - {"stage": "analysis", "data": {...}}
+        - {"stage": "email", "approach": "problem_aware", "data": {...}}
+        - {"stage": "followups", "data": [...]}
+        - {"stage": "recommendations", "data": {...}}
+        - {"stage": "complete", "data": {full_campaign}}
+        """
+
+        # Stage 1: Strategic Analysis
+        print("Stage 1: Analyzing company...")
+        yield {"stage": "started", "message": "Analyzing company and industry..."}
+
+        analysis = await self._analyze_company(
+            company_name, industry, offer, company_size
+        )
+
+        yield {"stage": "analysis", "data": analysis}
+
+        # Stage 2: Generate 5 emails with variants - STREAM EACH AS IT COMPLETES
+        print("Stage 2: Generating 5 emails in parallel...")
+        yield {"stage": "started", "message": "Generating email variations..."}
+
+        approaches = ["problem_aware", "authority", "curiosity", "social_proof", "direct_value"]
+
+        # Create all tasks but use as_completed to yield results progressively
+        email_tasks = {
+            approach: asyncio.create_task(
+                self._generate_email_with_variants(
+                    analysis, approach, style, company_name, offer
+                )
+            )
+            for approach in approaches
+        }
+
+        emails = {}
+        for approach in approaches:
+            email_data = await email_tasks[approach]
+            emails[approach] = email_data
+            # Stream this email immediately
+            yield {
+                "stage": "email",
+                "approach": approach,
+                "data": email_data
+            }
+
+        # Stage 3: Follow-ups and Metadata
+        print("Stage 3: Generating followups and metadata...")
+        yield {"stage": "started", "message": "Creating follow-up sequence..."}
+
+        followups_task = self._generate_followups(
+            emails["problem_aware"]["email"],
+            analysis,
+            style
+        )
+
+        all_emails_text = self._compile_emails_text(emails)
+        metadata_task = self._generate_metadata(all_emails_text)
+
+        # Stream followups as soon as ready
+        followups, metadata = await asyncio.gather(followups_task, metadata_task)
+
+        yield {"stage": "followups", "data": followups}
+
+        # Stream recommendations
+        yield {"stage": "recommendations", "data": metadata}
+
+        # Final complete package
+        complete_campaign = {
+            "company": {
+                "name": company_name,
+                "industry": industry,
+                "size": company_size
+            },
+            "analysis": analysis,
+            "cold_emails": emails,
+            "followup_sequence": followups,
+            "recommendations": metadata,
+            "style": style
+        }
+
+        yield {"stage": "complete", "data": complete_campaign}
     
     async def _analyze_company(
         self,
@@ -319,44 +412,99 @@ VARIANT_2: [alternative subject line]"""
         return variants
     
     def _parse_followup_sequence(self, followup_text: str) -> List[Dict]:
-        """Parse follow-up sequence into list of emails"""
+        """Parse follow-up sequence into list of emails with robust pattern matching"""
         followups = []
         current_email = {"day": 0, "subject": "", "body": ""}
         body_started = False
-        
+
         lines = followup_text.split("\n")
-        for line in lines:
-            line_lower = line.lower()
-            
-            # Detect new email
-            if "email 1" in line_lower or "day 3" in line_lower:
-                if current_email["subject"] and body_started:
-                    followups.append(current_email)
-                current_email = {"day": 3, "subject": "", "body": ""}
+        for i, line in enumerate(lines):
+            line_lower = line.lower().strip()
+            line_stripped = line.strip()
+
+            # Detect new email - more flexible patterns
+            day_detected = None
+            if any(pattern in line_lower for pattern in ["email 1", "day 3", "followup 1", "follow-up 1"]):
+                day_detected = 3
+            elif any(pattern in line_lower for pattern in ["email 2", "day 5", "followup 2", "follow-up 2"]):
+                day_detected = 5
+            elif any(pattern in line_lower for pattern in ["email 3", "day 7", "followup 3", "follow-up 3"]):
+                day_detected = 7
+
+            if day_detected:
+                # Save previous email if it has content
+                if current_email["subject"] and current_email["body"]:
+                    followups.append(current_email.copy())
+                current_email = {"day": day_detected, "subject": "", "body": ""}
                 body_started = False
-            elif "email 2" in line_lower or "day 5" in line_lower:
-                if current_email["subject"] and body_started:
-                    followups.append(current_email)
-                current_email = {"day": 5, "subject": "", "body": ""}
-                body_started = False
-            elif "email 3" in line_lower or "day 7" in line_lower:
-                if current_email["subject"] and body_started:
-                    followups.append(current_email)
-                current_email = {"day": 7, "subject": "", "body": ""}
-                body_started = False
-            elif line.startswith("SUBJECT:") or line.startswith("Subject:"):
-                current_email["subject"] = line.split(":", 1)[1].strip()
+                continue
+
+            # Parse subject line - flexible matching
+            if line_stripped.upper().startswith("SUBJECT:") or line_stripped.startswith("Subject:"):
+                current_email["subject"] = line_stripped.split(":", 1)[1].strip()
                 body_started = True
-            elif body_started and line.strip() and not any(x in line for x in ["Email", "BODY:", "Body:", "---", "==="]):
+                continue
+
+            # Parse body content
+            if body_started and line_stripped:
+                # Skip separator lines and labels
+                if any(x in line_stripped for x in ["BODY:", "Body:", "---", "===", "****"]):
+                    continue
+                # Skip lines that look like email headers/sections (but keep short sentences)
+                if len(line_stripped) < 3 or (line_stripped[0] == "#" and len(line_stripped) < 20):
+                    continue
+
+                # Append to body
                 if current_email["body"]:
-                    current_email["body"] += "\n" + line
+                    current_email["body"] += "\n" + line_stripped
                 else:
-                    current_email["body"] = line
-        
-        # Add last email
-        if current_email["subject"] and body_started:
-            followups.append(current_email)
-        
+                    current_email["body"] = line_stripped
+
+        # Add last email if valid
+        if current_email["subject"] and current_email["body"]:
+            followups.append(current_email.copy())
+
+        # If we still don't have 3 followups, try alternative parsing
+        if len(followups) < 3:
+            print(f"Warning: Only parsed {len(followups)} followups, attempting backup parsing...")
+            followups = self._parse_followup_fallback(followup_text)
+
+        return followups
+
+    def _parse_followup_fallback(self, followup_text: str) -> List[Dict]:
+        """Fallback parser that tries to extract any SUBJECT: lines with content after them"""
+        followups = []
+        lines = followup_text.split("\n")
+
+        i = 0
+        while i < len(lines):
+            line = lines[i].strip()
+            # Look for subject lines
+            if line.upper().startswith("SUBJECT:") or line.startswith("Subject:"):
+                subject = line.split(":", 1)[1].strip()
+
+                # Collect body lines until next subject or end
+                body_lines = []
+                i += 1
+                while i < len(lines):
+                    next_line = lines[i].strip()
+                    if next_line.upper().startswith("SUBJECT:") or next_line.startswith("Subject:"):
+                        break
+                    if next_line and not any(x in next_line for x in ["Email", "Day", "BODY:", "---", "==="]):
+                        body_lines.append(next_line)
+                    i += 1
+
+                if subject and body_lines:
+                    # Assign days based on order: 1st=Day 3, 2nd=Day 5, 3rd=Day 7
+                    day = [3, 5, 7][len(followups)] if len(followups) < 3 else 7
+                    followups.append({
+                        "day": day,
+                        "subject": subject,
+                        "body": "\n".join(body_lines)
+                    })
+                continue
+            i += 1
+
         return followups
     
     def _compile_emails_text(self, emails: Dict) -> str:

@@ -4,6 +4,7 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
 from typing import Optional
 import os
+import json
 from dotenv import load_dotenv
 
 from core.gumroad import GumroadValidator
@@ -218,17 +219,17 @@ async def generate_campaign(
     request: GenerateRequest,
     authorization: str = Header(...)
 ):
-    """Generate complete cold email campaign"""
-    
+    """Generate complete cold email campaign with streaming support"""
+
     # Extract license key
     license_key = authorization.replace("Bearer ", "").strip()
-    
+
     if not license_key:
         raise HTTPException(
             status_code=401,
             detail="License key required. Purchase at https://blazestudiox.gumroad.com/l/coldemailgeneratorpro"
         )
-    
+
     # Validate license with Gumroad and get product_id
     is_valid, error, product_id = await gumroad.verify_license(license_key)
 
@@ -238,26 +239,26 @@ async def generate_campaign(
     # Register/update tier if we got a product_id
     if product_id:
         tier_manager.register_license(license_key, product_id)
-    
+
     # Validate form data thoroughly
     if not request.company_name or len(request.company_name.strip()) < 2:
         raise HTTPException(
             status_code=422,
             detail="Company name is required (minimum 2 characters)"
         )
-    
+
     if not request.industry or len(request.industry.strip()) < 2:
         raise HTTPException(
             status_code=422,
             detail="Industry is required (minimum 2 characters)"
         )
-    
+
     if not request.offer or len(request.offer.strip()) < 10:
         raise HTTPException(
             status_code=422,
             detail="Offer description is required (minimum 10 characters)"
         )
-    
+
     # Check tier limits first
     current_uses = usage_tracker.get_usage_stats(license_key).get('uses', 0)
     can_use_tier, tier_limit, tier_name = tier_manager.check_tier_limits(license_key, current_uses)
@@ -294,54 +295,54 @@ async def generate_campaign(
 
     # Determine which API key to use (prioritize tier-based limits)
     api_key_to_use = request.user_api_key if needs_own_key else None
-    
-    try:
-        # Generate campaign with selected model provider
-        generator = EmailGenerator(
-            api_key=api_key_to_use,
-            model_provider=request.model_provider
-        )
-        
-        result = await generator.generate_campaign(
-            company_name=request.company_name.strip(),
-            industry=request.industry.strip(),
-            offer=request.offer.strip(),
-            style=request.style,
-            company_size=request.company_size
-        )
-        
-        # Increment usage (only if using our key)
-        if not request.user_api_key:
-            usage_tracker.increment_usage(license_key)
-        
-        # Get updated stats
-        updated_stats = usage_tracker.get_usage_stats(license_key)
-        
-        return {
-            "success": True,
-            "result": result,
-            "usage": updated_stats
-        }
-        
-    except ValueError as e:
-        # Invalid API key or config error
-        raise HTTPException(status_code=400, detail=str(e))
-    
-    except Exception as e:
-        # Generation error
-        error_msg = str(e)
-        
-        # Don't expose internal errors
-        if "API key" in error_msg or "authentication" in error_msg.lower():
-            raise HTTPException(
-                status_code=401,
-                detail="Invalid Claude API key. Check your key and try again."
+
+    # Stream the campaign generation
+    async def stream_generator():
+        try:
+            generator = EmailGenerator(
+                api_key=api_key_to_use,
+                model_provider=request.model_provider
             )
-        
-        raise HTTPException(
-            status_code=500,
-            detail=f"Generation failed: {error_msg}"
-        )
+
+            async for chunk in generator.generate_campaign_stream(
+                company_name=request.company_name.strip(),
+                industry=request.industry.strip(),
+                offer=request.offer.strip(),
+                style=request.style,
+                company_size=request.company_size
+            ):
+                # Send each chunk as Server-Sent Event
+                yield f"data: {json.dumps(chunk)}\n\n"
+
+            # Increment usage (only if using our key)
+            if not request.user_api_key:
+                usage_tracker.increment_usage(license_key)
+
+            # Get updated stats
+            updated_stats = usage_tracker.get_usage_stats(license_key)
+
+            # Send final usage stats
+            yield f"data: {json.dumps({'stage': 'usage', 'data': updated_stats})}\n\n"
+
+        except ValueError as e:
+            error_data = {"stage": "error", "error": str(e), "code": 400}
+            yield f"data: {json.dumps(error_data)}\n\n"
+        except Exception as e:
+            error_msg = str(e)
+            if "API key" in error_msg or "authentication" in error_msg.lower():
+                error_msg = "Invalid Claude API key. Check your key and try again."
+            error_data = {"stage": "error", "error": error_msg, "code": 500}
+            yield f"data: {json.dumps(error_data)}\n\n"
+
+    return StreamingResponse(
+        stream_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no"
+        }
+    )
 
 
 @app.post("/api/export")
